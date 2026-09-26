@@ -50,6 +50,9 @@ def normalize_image(data: bytes, *, reference=True):
             if not reference and image.width != image.height:
                 raise ValueError("generated image is not square")
             image.thumbnail((1024, 1024), Image.Resampling.LANCZOS)
+            # The converted sRGB profile embeds a creation timestamp; saving it would make the
+            # PNG bytes (and every downstream hash, cache key and replay key) nondeterministic.
+            image.info.pop("icc_profile", None)
             output = io.BytesIO()
             image.save(output, format="PNG")
             return output.getvalue(), {

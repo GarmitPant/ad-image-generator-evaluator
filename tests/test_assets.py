@@ -57,3 +57,17 @@ def test_icc_profile_preserves_alpha_compositing():
         encoded(Image.new("RGBA", (20, 20), (0, 0, 0, 0)), icc_profile=profile)
     )
     assert Image.open(io.BytesIO(data)).getpixel((0, 0)) == (255, 255, 255)
+
+
+def test_icc_tagged_reference_normalizes_deterministically(monkeypatch):
+    # LittleCMS stamps the converted sRGB profile with the current time; if that profile were
+    # embedded, identical references would hash differently and break caching and replay.
+    from PIL import ImageCms
+
+    profile = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+    data = encoded(Image.new("RGB", (64, 48), (200, 30, 30)), "JPEG", icc_profile=profile)
+    first, _ = normalize_image(data)
+    monkeypatch.setattr("time.time", lambda: 4_102_444_800.0)  # a different creation second
+    second, _ = normalize_image(data)
+    assert first == second
+    assert "icc_profile" not in Image.open(io.BytesIO(first)).info
