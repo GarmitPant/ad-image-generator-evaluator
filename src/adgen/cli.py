@@ -11,6 +11,7 @@ from .config import PipelineConfig, load_policy
 from .contracts import AdRequest
 from .demo import DEMO_VISION, SyntheticProvider, prepare_demo
 from .eval.config import EvaluatorConfig
+from .eval.report import build as build_report
 from .eval.vision import LocalVision, ReplayVision, SyntheticVision, export_vision_fixtures
 from .pipeline import GENERATED, Pipeline, export_run, generated
 from .providers import LiveProvider, ReplayProvider, export_fixtures, run_executions
@@ -70,6 +71,15 @@ def parser():
     )
     fixtures.add_argument("run_id")
     fixtures.add_argument("--destination", required=True, type=Path)
+    report = commands.add_parser("report", help="Build the submission bundle from evaluated runs")
+    report.add_argument("--out", type=Path, default=Path("submission"))
+    report.add_argument(
+        "--runs", nargs="*", help="Run IDs or prefixes (default: all evaluated runs)"
+    )
+    report.add_argument("--labels", type=Path, default=Path("data/labels.csv"))
+    report.add_argument(
+        "--include-synthetic", action="store_true", help="Include synthetic demo runs"
+    )
     return root
 
 
@@ -119,6 +129,13 @@ def main(argv=None):
                         "vision_records": vision,
                         "fixture_directory": str(args.destination.resolve()),
                     }
+                )
+            )
+            return 0
+        if args.command == "report":
+            print(
+                json.dumps(
+                    build_report(state, args.out, args.runs, args.labels, args.include_synthetic)
                 )
             )
             return 0

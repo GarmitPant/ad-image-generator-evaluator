@@ -21,11 +21,11 @@ First real (non-synthetic) generation run, 2026-09-26. Curated from gitignored `
 | `candidates/cN/creative-plan.json`, `guardrail-review.json`, `prompt.txt` | Per-candidate plan, review and exact image prompt |
 | `calls.json` | 8 model calls: models, usage, timestamps and **report-only** cost estimates (~$0.19 total). Dashboards are authoritative |
 | `summary.json` | Pipeline export summary (`generated_unscored`, no winner) |
-| `labels.json` | **Empty until Garmit labels it.** |
+| Human labels | Go in the shared [`data/labels.csv`](../../labels.csv), keyed by run ID and candidate index |
 
 ## Agent observations (not human labels, not evaluator output)
 
-Recorded by Claude Code while inspecting the run. Human labels in `labels.json` should be made independently.
+Recorded by Claude Code while inspecting the run. Human labels in `data/labels.csv` should be made independently.
 
 - **Selection:** "classic black frames" · "Polarized lenses." · "Built for bright days." · "Free returns within 30 days on all orders placed online." All are exact spans, and the protected phrase is intact (19 words, limit 20). "classic black frames" was given role `product_name`, which is debatable. Its lowercase comes from the source and is correct under exact rendering.
 - **c1:** all four blocks appear once, exactly and legibly. The frame shape and colour match. The lens logo is close to "Ray-Ban P"; the temple script is slightly malformed. Coastal summer scene; no stereotypes observed.
