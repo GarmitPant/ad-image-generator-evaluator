@@ -1,6 +1,6 @@
 # Challenges and decision history
 
-Version 0.3 · 2026-09-26
+Version 0.4 · 2026-09-26
 
 ## 1. Confirmed changes
 
@@ -37,10 +37,10 @@ These requirements come from Garmit's latest messages. Model IDs, extraction imp
 | D01 | Whole-input preservation applies to Exact; Extract permits selected spans | v0.1 blanket rule superseded by user-confirmed modes |
 | D02 | Separate content preparation and rendering responsibilities; aesthetic planner optional | Separation retained; "planner optional" superseded by D17 |
 | D03 | Exact uses code; Extract selects relevant source-backed content | Modes confirmed; extractive-only implementation proposed |
-| D04 | One image call and no automatic repair initially | Supersedes proposed two-candidate/one-repair baseline; proposed simplification |
+| D04 | One image call and no automatic repair initially | Image-count part superseded by D24; no-repair retained |
 | D05 | Strict square ≤1024 baseline | Retained proposed technical policy |
 | D06 | Reliability separate from quality verdict; unknown is not pass | Retained |
-| D07 | No initial ranking; accept only fully passing singleton output | Supersedes unnecessary candidate tie-breaking work |
+| D07 | No initial ranking; accept only fully passing singleton output | Superseded by D24/D25; "approve only a passing output" retained |
 | D08 | Product identity needs more than embedding similarity | Retained |
 | D09 | Locale-scoped scene profiles; source prose has no style authority | Scene-profile part superseded by D18; "source prose has no style authority" retained |
 | D10 | Product-label text separated spatially from ad copy | Retained; role/multiplicity checks needed |
@@ -57,6 +57,14 @@ These requirements come from Garmit's latest messages. Model IDs, extraction imp
 | D21 | OpenAI for LLM stages; Gemini for images; no Anthropic code now | Confirmed by Garmit; model IDs proposed |
 | D22 | Generation implemented before evaluator | Confirmed by Garmit; evaluation emphasis unchanged |
 | D23 | Repository commits placeholder `.env.example` only; users supply keys | Confirmed by Garmit |
+| D24 | 3 candidates per request (configurable 1–4), one creative plan per candidate | Confirmed by Garmit (v0.4) |
+| D25 | Evaluate every candidate; rank in code (verdict tier → failed checks → score → guardrail → index); present best, approved only if pass; keep all | Proposed ranking rule; flow confirmed by Garmit |
+| D26 | Per-dimension scores (0–1) and unweighted overall score for ranking only; verdicts gate | Proposed; uncalibrated |
+| D27 | Guardrails simplified: static predefined policy file, global rules + optional country notes, keyword check + approve/reject reviewer; no web lookup | Confirmed by Garmit; supersedes v0.3 per-rule evidence review |
+| D28 | 1–3 reference images per product | Confirmed by Garmit |
+| D29 | Save all candidate images; export winner + summary to `outputs/` | Confirmed by Garmit |
+| D30 | Evaluator vision models local only (PaddleOCR, Grounding DINO tiny, DINOv2 small) behind swappable interfaces; hosted later if needed | Confirmed by Garmit |
+| D31 | Batched evaluation after the single-request generate→evaluate→select flow works | Confirmed by Garmit |
 
 Prior rationale is preserved in Git history. The root decision register records human direction; do not infer collective architecture approval from repository setup.
 

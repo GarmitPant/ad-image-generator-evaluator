@@ -1,6 +1,6 @@
 # State store
 
-Version 0.1 · 2026-09-26 · Architectural requirement confirmed by Garmit; schema details proposed
+Version 0.2 · 2026-09-26 · Architectural requirement confirmed by Garmit; schema details proposed. v0.2 adds candidates, evaluations and selection
 
 ## 1. Purpose
 
@@ -45,8 +45,7 @@ CREATE TABLE run (
                       ('pending','running','succeeded','failed','blocked')),
   current_stage     TEXT,
   terminal_reason   TEXT,                         -- e.g. invalid_text_plan, provider_failed, generated_unscored
-  guardrail_status  TEXT CHECK (guardrail_status IN
-                      ('approved','approved_after_replan','rejected_after_replan')),
+  n_candidates      INTEGER NOT NULL CHECK (n_candidates BETWEEN 1 AND 4),
   budget_cap_usd    REAL NOT NULL,
   cost_est_usd      REAL NOT NULL DEFAULT 0,
   cost_unknown      INTEGER NOT NULL DEFAULT 0,   -- 1 if any call outcome is unknown
@@ -61,7 +60,9 @@ CREATE TABLE stage_execution (
   stage             TEXT NOT NULL CHECK (stage IN
                       ('intake','product_analysis','copy_selection','context_resolution',
                        'creative_planning','plan_guardrails','prompt_compilation',
-                       'image_generation','output_gate')),
+                       'image_generation','output_gate','evaluation','selection','export')),
+  candidate_index   INTEGER,                      -- NULL for request-level stages (intake..context_resolution,
+                                                  -- selection, export); 1..N for per-candidate stages
   attempt           INTEGER NOT NULL,             -- creative_planning / plan_guardrails: 1 or 2
   status            TEXT NOT NULL CHECK (status IN
                       ('pending','running','succeeded','failed','skipped','blocked')),
@@ -72,7 +73,7 @@ CREATE TABLE stage_execution (
   error_detail      TEXT,                         -- never contains credentials
   started_at        TEXT,
   ended_at          TEXT,
-  UNIQUE (run_id, stage, attempt)
+  UNIQUE (run_id, stage, candidate_index, attempt)
 );
 
 CREATE TABLE artifact (
@@ -80,7 +81,8 @@ CREATE TABLE artifact (
   kind              TEXT NOT NULL CHECK (kind IN
                       ('request','reference_original','reference_rendition','product_profile',
                        'source_contract','text_plan','resolved_context','creative_plan',
-                       'guardrail_review','prompt','image','provider_receipt')),
+                       'guardrail_review','prompt','image','provider_receipt',
+                       'eval_record','evidence','summary')),
   schema_version    TEXT,
   path              TEXT NOT NULL,                -- relative to repo/runs root
   bytes             INTEGER NOT NULL,
@@ -121,6 +123,49 @@ CREATE TABLE model_call (
   error_code          TEXT
 );
 
+CREATE TABLE candidate (
+  run_id            TEXT NOT NULL REFERENCES run(run_id),
+  candidate_index   INTEGER NOT NULL,             -- 1..N
+  status            TEXT NOT NULL CHECK (status IN
+                      ('pending','planned','generated','evaluated','failed','blocked')),
+  guardrail_status  TEXT CHECK (guardrail_status IN
+                      ('approved','approved_after_replan','rejected_after_replan')),
+  creative_plan_id  TEXT REFERENCES artifact(artifact_id),
+  prompt_id         TEXT REFERENCES artifact(artifact_id),
+  image_id          TEXT REFERENCES artifact(artifact_id),   -- candidates/c{i}.png
+  failure_code      TEXT,
+  PRIMARY KEY (run_id, candidate_index)
+);
+
+CREATE TABLE evaluation (
+  evaluation_id          TEXT PRIMARY KEY,
+  run_id                 TEXT NOT NULL,
+  candidate_index        INTEGER,                  -- NULL for external images evaluated standalone
+  image_id               TEXT NOT NULL REFERENCES artifact(artifact_id),
+  eval_record_id         TEXT NOT NULL REFERENCES artifact(artifact_id),  -- full EvalRecord JSON
+  evaluator_version      TEXT NOT NULL,
+  rubric_sha256          TEXT NOT NULL,
+  overall_verdict        TEXT NOT NULL CHECK (overall_verdict IN ('pass','fail','unknown')),
+  overall_score          REAL NOT NULL,
+  failed_required_checks INTEGER NOT NULL,
+  text_selection_verdict TEXT NOT NULL, text_selection_score REAL NOT NULL,
+  text_rendering_verdict TEXT NOT NULL, text_rendering_score REAL NOT NULL,
+  product_verdict        TEXT NOT NULL, product_score        REAL NOT NULL,
+  context_verdict        TEXT NOT NULL, context_score        REAL NOT NULL,
+  execution_status       TEXT NOT NULL CHECK (execution_status IN ('ok','degraded','failed')),
+  created_at             TEXT NOT NULL
+);
+
+CREATE TABLE selection (
+  run_id            TEXT PRIMARY KEY REFERENCES run(run_id),
+  winner_index      INTEGER,                      -- NULL if no candidate was evaluated
+  approved          INTEGER NOT NULL,             -- 1 only if winner verdict = pass
+  ranking           TEXT NOT NULL,                -- JSON: ordered [{candidate_index, tier, failed, score, guardrail}]
+  ranking_rule_version TEXT NOT NULL,
+  export_path       TEXT,                         -- outputs/<request_id>/<run_id>/
+  created_at        TEXT NOT NULL
+);
+
 CREATE TABLE event (                              -- append-only
   seq          INTEGER PRIMARY KEY AUTOINCREMENT,
   run_id       TEXT NOT NULL REFERENCES run(run_id),
@@ -136,6 +181,7 @@ CREATE INDEX idx_exec_run      ON stage_execution(run_id, stage);
 CREATE INDEX idx_exec_fp       ON stage_execution(input_fingerprint, status);
 CREATE INDEX idx_call_exec     ON model_call(exec_id);
 CREATE INDEX idx_event_run     ON event(run_id, seq);
+CREATE INDEX idx_eval_run      ON evaluation(run_id, candidate_index);
 ```
 
 Artifact payload schemas (ProductProfile, TextPlan, CreativePlan, and so on) are Pydantic models with explicit `schema_version`. The store holds hashes and paths; the content lives in the files.
@@ -146,17 +192,20 @@ Artifact payload schemas (ProductProfile, TextPlan, CreativePlan, and so on) are
 2. **Resume and cache:** before running, look up a `succeeded` execution with the same `input_fingerprint`. If one exists, create an execution with `reused_from` set and no model call. Product analysis uses this across runs, giving one call per unique reference.
 3. **Paid-call safety:** insert `model_call(status='dispatched')` and commit before sending. After a crash, any `dispatched` call with no completion becomes `unknown`, and the run gets `cost_unknown = 1`. The call is not re-sent automatically; a human decides.
 4. **Budget:** before each dispatch, check `cost_est_usd` plus the estimated cost of the next call against `budget_cap_usd`. If it would exceed the cap, the run is `blocked` with `budget_blocked`. Estimates come from configured price tables and are labelled as estimates.
-5. **Guardrail outcome:** `run.guardrail_status` is set by the plan_guardrails stage and is always carried into the evaluator output.
+5. **Guardrail outcome:** `candidate.guardrail_status` is set by the plan_guardrails stage for that candidate and is always carried into its EvalRecord.
+5a. **Candidates are independent.** One candidate's failure marks that candidate `failed`/`blocked` and the others continue. Selection runs if at least one candidate is `evaluated`. Otherwise the run ends `failed` with no winner.
+5b. **Evaluation is re-runnable.** A new evaluator or rubric version creates new `evaluation` rows. Old rows are kept, never overwritten. Batched evaluation later writes the same table with `candidate_index` set or NULL.
 6. **Replay mode:** `provider='replay'` calls read recorded responses keyed by prompt hash and model. A missing recording fails the stage and never reaches the network.
 7. **No secrets:** requests are recorded after credentials are removed. A test scans the database and artifacts for key patterns.
-8. **Git:** `runs/` (including `state.db`) is gitignored. Curated demo or golden runs are exported to `data/` as files plus a JSON dump of their store rows.
+8. **Git:** `runs/` (including `state.db`) and `outputs/` are gitignored. Curated demo or golden runs are exported to `data/` as files plus a JSON dump of their store rows.
 
 ## 5. Observability mapping (stretch goal)
 
 | Store | OpenTelemetry |
 |---|---|
 | run | trace (`run_id` → trace attribute), root span |
-| stage_execution | child span per stage attempt; status and error_code |
+| stage_execution | child span per stage attempt, grouped by candidate_index; status and error_code |
+| evaluation / selection | span attributes and events on the candidate/selection spans |
 | model_call | child span with GenAI semantic attributes: system, request/response model, token usage |
 | event | span events |
 

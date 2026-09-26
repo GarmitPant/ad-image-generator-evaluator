@@ -11,7 +11,7 @@ Read README.md, docs/implementation-status.md, docs/design/01-generation-pipelin
 - Automated evaluation is the primary judged deliverable: defensible methods, criteria, evidence, calibration, offline tests and honest results. Implementation order: generation pipeline first, then evaluator.
 - Python; geography is an enum of 8 countries (US, GB, DE, JP, IN, AU, BR, AE) with one facts row each; season is an enum. Use organizer-allowed Gemini image generation; published generated images have long edge ≤1024 px.
 - Providers: OpenAI for all LLM stages, Google Gemini for image generation. Do not write Anthropic/Claude code for now.
-- An LLM creative planner designs scene/layout from product profile + resolved context and sees text roles/lengths only, never the copy. General guardrails (no stereotypes/tokenism, season consistency, etc.) replace per-country-season registries; code checks + LLM reviewer, one replan, then generate and flag.
+- An LLM creative planner designs scene/layout from product profile + resolved context and sees text roles/lengths only, never the copy. Guardrails are simple and predefined in a static policy file (global rules + optional country notes; no web lookup): keyword check + LLM reviewer, one replan, then generate and flag.
 - Every stage runs through the SQLite state store (docs/design/06-state-store.md).
 - Commit only `.env.example` with empty placeholders; users supply their own keys.
 - Commits are authored by Garmit; do not add AI co-author trailers.
@@ -24,7 +24,8 @@ Read README.md, docs/implementation-status.md, docs/design/01-generation-pipelin
 
 ## Current proposed safeguards
 
-- Generation: cached product analysis, Exact-in-code or one Extract selection call, code context resolution, planner (≤2 calls), guardrail review (≤2 calls), code prompt compilation, one image call. Every call bounded, recorded before dispatch, never silently retried.
+- Generation: cached product analysis over 1–3 references, Exact-in-code or one Extract selection call, code context resolution, then per candidate (default 3): planner (≤2 calls), simple guardrail review (≤2 calls), code prompt compilation, one image call. Every call is bounded, recorded before dispatch and never silently retried.
+- Evaluate every candidate (local OCR/detector/embedding models + OpenAI vision judge), rank in code (verdicts gate, scores rank), present the best (approved only if it passes), save all images. Batched evaluation comes after.
 - Initial extraction is source-span based; semantic checks catch misleading omissions even if every chosen word occurs in the input. No unsupported paraphrase.
 - Validate schemas and span references in code. Keep source, policy, protected spans, plan, reference, image and evaluator versions immutable and hashed.
 - A source/plan selector cannot define its own passing criteria after seeing results. Human gold requirements are independently labelled.

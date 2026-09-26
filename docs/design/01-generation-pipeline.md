@@ -1,41 +1,52 @@
 # Generation pipeline
 
-Version 0.3 · 2026-09-26 · Supersedes v0.2 (fixed template, per-pair scene registry, no planner)
+Version 0.4 · 2026-09-26 · Supersedes v0.3 (single image; per-rule guardrail review) and v0.2 (fixed template, per-pair scene registry)
 
-## 1. Purpose and changes from v0.2
+## 1. Purpose and confirmed changes
 
-Generate a display ad from a reference product image, typed geography and season, and freeform text content, with an auditable, resumable record of every stage. Generation is implemented first; the standalone evaluator (document 05) follows and remains the main judged deliverable.
+For one input, the pipeline:
+1. generates **three candidate ads**, each from its own creative plan;
+2. **evaluates every candidate**;
+3. **ranks** them in code;
+4. **presents the highest-ranked one**;
+5. saves every image and record.
 
-Changes confirmed by Garmit on 2026-09-26:
+Batched evaluation across many requests comes after this flow works. The evaluator (document 05) remains the main judged deliverable. Generation is implemented first.
 
-| Change | Replaces |
+Confirmed by Garmit on 2026-09-26:
+
+| Decision | Replaces |
 |---|---|
-| An LLM **creative planner** designs scene, composition and text styling | Fixed code template for scene/layout |
-| Geography and season are predefined enums; each country has one row of objective facts. **No per geography×season registry** | Reviewed scene profile per (country, season) pair |
-| **General guardrails** (stereotypes, tokenism, season contradictions, etc.) apply to every country, so adding a country is one row | Per-pair `must_not` / `avoid` lists |
-| Guardrails are enforced by code checks plus an LLM reviewer; **one replan max**, then generate anyway and flag the run for evaluation | — |
-| A **SQLite state store** records every stage, artifact and model call (architectural requirement; observability built on it later) | Files-only run directory |
-| LLM stages use **OpenAI**; image generation uses **Google Gemini**. No Anthropic/Claude implementation for now | Gemini 3.8 Flash for analysis/selection; Claude judge |
-| The planner receives **text roles and lengths only**, never the copy itself | — |
+| LLM **creative planner** designs scene, composition and text styling. It sees text **roles and lengths only**, never the copy | Fixed code template |
+| Geography: enum of 8 countries, one row of facts each. Season: enum. No per geography×season registry | Per-pair scene profiles |
+| **Simple, functional, predefined guardrails**: one static versioned file with global rules plus optional per-country notes. No web lookup. Rigour goes into evaluation | v0.3 per-rule evidence-verified review |
+| Guardrails: planner gets the rules, keyword check, one reviewer call (approve/reject + reasons), **one replan**, then generate anyway and flag | — |
+| **3 candidates per request, one plan per candidate**; evaluate all; present the best; keep all | v0.2/v0.3 single image, no ranking (D04, D07) |
+| **1–3 reference images** per product | Single reference |
+| Generated images are saved: all candidates under the run, the winner exported to `outputs/` | — |
+| SQLite state store for all stages (document 06) | Files only |
+| OpenAI for LLM stages, Gemini for images, no Anthropic code; local evaluator vision models only | Gemini 3.8 Flash text stages; Claude judge |
+| Repository commits `.env.example` placeholders only | — |
 
-The text contract (Exact/Extract, protected phrases, frozen TextPlan) is unchanged and remains authoritative in document 05 §3.
+The text contract (Exact/Extract, protected phrases, frozen TextPlan) is unchanged. It is defined in document 05 §3.
 
 ## 2. Request
 
-Pydantic models, explicit schema versions, `extra="forbid"`, bounded values.
+Pydantic models with explicit schema versions, `extra="forbid"` and bounded values.
 
 | Field | Contract |
 |---|---|
 | request_id | Human-readable tracking ID; not content identity |
-| product_image | Local PNG/JPEG/WebP path; decoded and hashed |
+| product_images | **1–3** local PNG/JPEG/WebP paths showing the **same** product. Each is decoded and hashed; order is preserved; duplicates (same hash) are rejected |
 | geography | `Geography` enum: `US, GB, DE, JP, IN, AU, BR, AE` |
-| season | `Season` enum: `spring, summer, autumn, winter` — the season as experienced in that country |
-| text | TextInput: source_text, `exact`/`extract` policy, optional protected phrases (document 05 §3) |
+| season | `Season` enum: `spring, summer, autumn, winter`, as experienced in that country |
+| text | TextInput: source_text, `exact`/`extract` policy, optional protected phrases |
+| candidates | Integer 1–4, default **3** |
 | aspect_ratio | `1:1` only in this version |
 
-### Country facts table (code, versioned data)
+The system cannot verify that several references show the same product. That is the user's declaration. The product-analysis stage reports visible inconsistencies between references as warnings.
 
-One row per enum value. Objective facts only; no creative cues. Adding a country means adding one reviewed row plus a test.
+### Country facts and seasons (code, versioned data)
 
 | Code | Name | Hemisphere | Climate band (primary population centres) |
 |---|---|---|---|
@@ -48,197 +59,216 @@ One row per enum value. Objective facts only; no creative cues. Adding a country
 | BR | Brazil | southern | tropical |
 | AE | United Arab Emirates | northern | arid |
 
-Climate band is a declared simplification for large or varied countries. The resolver records it as an assumption, not a fact about every region.
-
-Season months are computed from hemisphere: northern spring Mar–May, summer Jun–Aug, autumn Sep–Nov, winter Dec–Feb; southern shifted by six months. The season name is never swapped. AU winter stays "winter" (Jun–Aug).
-
-A small **band × season contradiction table** (3 bands × 4 seasons, country-independent) lists generic contradictions. For example, `summer → snow, bare winter trees`; `tropical/arid, any season → snow, frost`; `winter, temperate → beachwear-in-sun as the main scene`. It is data, versioned and unit-tested. It feeds both guardrail checks and the prompt's avoid list.
+- Months come from the hemisphere: northern spring Mar–May, summer Jun–Aug, autumn Sep–Nov, winter Dec–Feb; southern is shifted six months. The season name is never swapped.
+- The climate band is a declared simplification.
+- A small, country-independent **band × season contradiction table** (for example `summer → snow`, `tropical/arid → snow, frost`) feeds the planner's avoid list and the keyword check.
 
 ## 3. Pipeline map
 
-A deterministic orchestrator (code) runs stages in order. Every stage reads its inputs from the state store and writes its outputs and status back (document 06). Stages never call each other. The LLM stages ("sub-agents") are single, bounded, schema-constrained calls with no tools. None is an autonomous agent.
+A deterministic code orchestrator runs the stages. Each stage reads its inputs from the SQLite state store and writes its outputs and status back (document 06). Stages S5–S10 run **once per candidate** (`candidate_index` 1…N). LLM "sub-agents" are single bounded, schema-constrained calls with no tools.
 
 ```text
 AdRequest
- S1 intake ............... code     validate enums/text/image; reference rendition ≤1024; hashes
- S2 product_analysis ..... LLM      OpenAI vision → ProductProfile (cached per reference hash)
- S3 copy_selection
-      exact .............. code     full input → TextPlan
-      extract ............ LLM      OpenAI → source spans only
-      validate ........... code     offsets, protected phrases, capacity → frozen TextPlan
- S4 context_resolution ... code     country row + season → ResolvedContext
- S5 creative_planning .... LLM      OpenAI → CreativePlan   (inputs exclude the copy itself)
- S6 plan_guardrails
-      code_checks ........ code     schema, bounds, lexicons, zones
-      review ............. LLM      OpenAI reviewer → per-rule verdicts; decision composed in code
-      on reject .......... → S5 once with reasons; if still rejected, continue and flag
- S7 prompt_compilation ... code     ProductProfile + CreativePlan + TextPlan + policy → prompt
- S8 image_generation ..... Gemini   gemini-3.1-flash-image + reference image, 1:1, 1K, one call
- S9 output_gate .......... code     decode, square, long edge ≤1024, store → evaluator handoff
+ S1  intake ................ code     enums, text, 1–3 references → renditions ≤1024, hashes
+ S2  product_analysis ...... LLM      OpenAI vision, all references → one ProductProfile (cached by reference set)
+ S3  copy_selection ........ code | LLM   Exact in code; Extract = OpenAI spans → validated, frozen TextPlan
+ S4  context_resolution .... code     country row + season → ResolvedContext + guardrail policy
+ ── per candidate i = 1..N ────────────────────────────────────────────────────────────────
+ S5  creative_planning ..... LLM      OpenAI → CreativePlan_i  (roles + lengths, never the copy;
+                                      told to differ from plans 1..i-1)
+ S6  plan_guardrails ....... code + LLM   keyword check + reviewer → approve | reject(reasons)
+                                      reject → S5 once; still rejected → continue, flag
+ S7  prompt_compilation .... code     ProductProfile + CreativePlan_i + TextPlan + policy → prompt_i
+ S8  image_generation ...... Gemini   gemini-3.1-flash-image + all references, 1:1, 1K, one call
+ S9  output_gate ........... code     decode, square, ≤1024 → save candidates/c{i}.png
+ S10 evaluation ............ evaluator (document 05) → EvalRecord_i with verdicts + scores
+ ── after all candidates ──────────────────────────────────────────────────────────────────
+ S11 selection ............. code     rank candidates → winner + reasons
+ S12 export ................ code     outputs/<request_id>/<run_id>/best.png + summary.json
 ```
+
+A failed candidate (refusal, invalid image, blocked plan) does not stop the others. It is recorded and ranked last. The run succeeds if at least one candidate reaches S10.
 
 ### S1 Intake
 
-Decode bytes rather than trusting the extension. Reject unreadable, animated or oversized inputs. Proposed limits: 20 MB and **50 MP**, raised from 40 MP because the supplied `heineken-3.jpg` is about 42.2 MP. Apply EXIF orientation and convert to sRGB. Create a reference rendition with long edge ≤1024 and no enlargement. The original stays authoritative for evaluation. Resolve protected phrases to spans (document 05 §3).
+- **Decode** the bytes rather than trusting the file extension.
+- **Reject** unreadable or animated images, and files over 20 MB or 50 MP.
+- **Normalize:** apply EXIF orientation, convert to sRGB, make a rendition with long edge ≤1024 without enlarging.
+- **Keep originals:** they stay authoritative for evaluation.
+- **Protected phrases:** resolve them to spans.
 
 ### S2 Product analysis (sub-agent)
 
-- **Model:** proposed `gpt-6-sol`, low reasoning effort, structured output.
-- **Input:** reference rendition.
+- **Model:** proposed `gpt-6-sol`, low effort.
+- **Input:** all reference renditions in one call.
 - **Output — ProductProfile:**
-  - category
-  - silhouette and shape description
-  - dominant colours
-  - materials and finish
-  - distinctive components
-  - visible label/logo text, transcribed only where legible
+  - category, silhouette, dominant colours, materials, distinctive components
+  - visible label/logo text, only where legible
   - `unknown` fields
-- **Rules:** cached per reference hash, so there is at most one call per unique product. A human-authored profile may replace it and is recorded as `human_supplied`. The model must not guess brand or label text it cannot read.
+  - `reference_inconsistencies` warnings
+- **Caching:** by the sorted set of reference hashes. A human-supplied profile may replace the model's and is recorded as `human_supplied`.
 
 ### S3 Copy selection
 
-Unchanged from document 05 §3. Exact mode is code. Extract mode is one structured call (proposed `gpt-6-sol`, medium effort) returning source spans only; code validates them and freezes the TextPlan. An invalid plan ends the run as `invalid_text_plan`. There is no silent fallback.
+As in document 05 §3. Exact mode is code; Extract mode is one structured call. The code validator freezes the TextPlan. All candidates share this one TextPlan, so candidates differ in visuals, not copy.
 
 ### S4 Context resolution
 
-Pure code. It produces ResolvedContext:
-- country name, hemisphere, climate band (with the simplification note), season, months
-- generic contradictions for that band × season
-- the guardrail policy version
+Pure code. It produces ResolvedContext: country, hemisphere, climate band (with note), season, months, band × season contradictions, the guardrail policy version and any per-country notes.
 
-### S5 Creative planning (sub-agent)
+### S5 Creative planning (sub-agent, per candidate)
 
-- **Model:** proposed `gpt-6-sol`, medium effort, structured output.
+- **Model:** proposed `gpt-6-sol`, medium effort.
 - **Inputs:**
   - ProductProfile
   - ResolvedContext
-  - guardrail policy text
-  - canvas `1:1`
-  - the zone grid
-  - **text layout requirements**: for each TextPlan block, its `block_id`, role (`product_name | tagline | offer | qualifier | supporting_text`), character count, word count and line breaks.
-- **Excluded:** the copy itself. The planner can size and place text areas but cannot let the words steer the scene. "Winter savings" in the copy cannot pull a summer scene towards winter.
+  - the guardrail rules
+  - canvas and zone grid
+  - text layout requirements: per TextPlan block, `block_id`, role, character and word counts, line breaks
+  - summaries of earlier candidates' plans (setting, lighting, placement), so each candidate explores a different concept
+- **Excluded:** the copy itself.
 
-**CreativePlan output** (`creative-plan/1`, all strings length-bounded):
+**CreativePlan output** (`creative-plan/1`, bounded strings):
 
 ```text
-setting:            ≤300 chars — where the scene is, as observable elements
+concept:            ≤120 chars, one-line idea distinguishing this candidate
+setting:            ≤300 chars, observable elements
 lighting:           time of day, light quality, direction
-surface_and_props:  ≤5 items; the product's contact surface first
+surface_and_props:  ≤5 items; product contact surface first
 palette:            ≤5 named colours
-people:             none | background_non_identifiable      (default none)
-product_placement:  {zone, scale: fraction of frame height 0.25–0.7, orientation}
-text_layout:        per block_id: {zone, size: large|medium|small, alignment,
-                                   type_style: ≤60 chars, contrast_treatment:
-                                   clean_background | solid_panel | gradient_scrim}
-context_cues:       2–6 × {cue, kind: geography|season}   — observable things only
+people:             none | background_non_identifiable (default none)
+product_placement:  {zone, scale 0.25–0.7 of frame height, orientation}
+text_layout:        per block_id: {zone, size large|medium|small, alignment,
+                                   type_style ≤60 chars,
+                                   contrast_treatment clean_background|solid_panel|gradient_scrim}
+context_cues:       2–6 × {cue, kind: geography|season}
 avoid:              ≤8 items
-rationale:          advisory; stored, never compiled into the prompt
+rationale:          advisory; stored, never sent to the image model
 ```
 
-**Zone grid:** a fixed 3×3 enum (`top_left … bottom_right`) plus `top_band`, `bottom_band`, `left_third`, `right_third`. Code validates:
-- the product zone and all text zones do not overlap;
-- every TextPlan block has exactly one layout entry;
-- no layout entry refers to an unknown block.
+Code validates:
+- the zones come from a fixed 3×3 grid plus bands and thirds;
+- the product and text zones don't overlap;
+- every TextPlan block has exactly one layout entry.
 
-### S6 Plan guardrails
+### S6 Plan guardrails (simple, functional)
 
-**Guardrail policy** (`policy/guardrails.yaml`, versioned, hashed; applies to every country):
+**Policy file** `policy/guardrails.yaml`: predefined, static, versioned and hashed. No web lookup.
 
-| Rule | Prohibits |
-|---|---|
-| GR-STEREO | People, dress, accents or behaviour used as racial, ethnic, national or religious shorthand; caricature |
-| GR-TOKEN | Flags, national monuments, famous landmarks or iconic wildlife as the geography signal |
-| GR-RELIGION | Religious symbols, sites or ceremonies as decoration |
-| GR-SEASON | Cues contradicting the resolved season or climate band (band × season table) |
-| GR-PEOPLE | Identifiable real people or celebrities; minors in any scene with an age-restricted product |
-| GR-ALCOHOL | For alcohol products: minors, driving, excessive consumption, health or performance claims |
-| GR-TEXT | Instructions for extra text, signage, logos or watermarks in the scene; legible background text is avoided because it pollutes OCR |
+```yaml
+version: 1
+global_rules:            # sent to planner and reviewer
+  - id: GR-STEREO    text: No people, dress, accents or behaviour used as racial, ethnic, national or religious shorthand; no caricature.
+  - id: GR-TOKEN     text: No flags, national monuments, famous landmarks or iconic wildlife as the geography signal.
+  - id: GR-RELIGION  text: No religious symbols, sites or ceremonies as decoration.
+  - id: GR-SEASON    text: No cues contradicting the resolved season or climate.
+  - id: GR-PEOPLE    text: No identifiable real people; no minors with age-restricted products.
+  - id: GR-ALCOHOL   text: For alcohol, no minors, driving, excessive drinking or health claims.
+  - id: GR-TEXT      text: No extra text, signage, logos or watermarks in the scene.
+keywords:                # coarse keyword check; misses are expected, reviewer is the backstop
+  GR-TOKEN: [flag, kangaroo, eiffel, taj mahal, ...]
+  ...
+country_notes:           # optional, short; most countries have none
+  AE: [Alcohol advertising is restricted; alcohol products are flagged for review.]
+```
 
-Geography should come through ordinary, observable, non-stereotyped cues: architecture, streetscape, vegetation, light, materials, everyday settings.
+**Flow:**
+1. The planner receives the rules.
+2. The code keyword check runs on the plan (including band × season contradiction terms).
+3. One reviewer call (proposed `gpt-6-sol`, low effort) returns `{decision: approve|reject, reasons: [{rule_id, explanation}]}`.
+4. A keyword hit or a reviewer reject counts as a rejection.
+5. On rejection, re-run S5 once with the reasons. If the new plan is still rejected, generate anyway and set that candidate's `guardrail_status = rejected_after_replan`.
+6. If the plan is schema-invalid twice, that candidate is `blocked`.
 
-**Code checks** run first:
-- schema validity and field bounds
-- zone validity
-- a banned-term lexicon per rule, versioned
-- band × season contradiction terms
-- the CreativePlan must contain no quoted strings that could render as text
-
-Lexicons are coarse and admit false negatives; the reviewer is the backstop.
-
-**Reviewer** (sub-agent; proposed `gpt-6-sol`, low effort, separate prompt):
-- Input: CreativePlan, ResolvedContext and policy. No image.
-- Output: one verdict per rule, `pass | violation | unsure`, with a quote from the plan as evidence.
-- Code checks that each quote occurs in the plan.
-
-**Decision** (code, not model):
-- `approved` if every rule passes in both code checks and review.
-- `rejected` if any rule is a violation.
-- `unsure` counts as a violation, conservatively; this is a proposal.
-
-**Replan policy:**
-1. On rejection, re-run S5 once. The planner receives the rule IDs and quotes.
-2. If the second plan is approved, record `guardrail_status = approved_after_replan`.
-3. If it is rejected again, **continue to generation** with the second plan. Record `guardrail_status = rejected_after_replan` and the reasons. The evaluator reports this flag.
-4. If a plan is schema-invalid twice, no usable plan exists. The run is `blocked`, and no plan is invented.
-
-A reviewer that shares the planner's model family gives limited independence. The flag is evidence to evaluate, not proof of safety.
+Adding a region means editing this file. Guardrails are intentionally simple here. Checking guardrail compliance in the generated *image* belongs to the evaluator.
 
 ### S7 Prompt compilation
 
-Code and a versioned template. Sections:
+Code with a versioned template. It has six sections:
+1. **PRODUCT**, from ProductProfile. All references are attached; preserve identity; exactly one product.
+2. **SCENE**, from CreativePlan.
+3. **LAYOUT**, from CreativePlan zones.
+4. **TEXT**, from the frozen TextPlan: exact escaped strings, with styles from the plan, labelled literal copy.
+5. **AVOID**: global rules, band × season contradictions and plan `avoid`.
+6. **OUTPUT**: 1:1, 1K.
 
-1. **PRODUCT**, from ProductProfile: preserve silhouette, proportions, colours and the product's own label; exactly one product.
-2. **SCENE**, from CreativePlan: setting, lighting, surface/props, palette, people, context cues.
-3. **LAYOUT**, from CreativePlan zones: product placement, text areas and contrast treatment.
-4. **TEXT**, from the frozen TextPlan. Each block's exact string is escaped and quoted, with its role and the plan's size and style. It is labelled literal copy: no paraphrase, and no extra text, logos or watermarks.
-5. **AVOID**: guardrail policy lines, band × season contradictions and CreativePlan `avoid`.
-6. **OUTPUT**: one image, 1:1, 1K.
-
-The raw source text and the planner's `rationale` never enter the prompt. The prompt hash covers the template version and all inputs.
+Raw source text and the planner's rationale never enter the prompt.
 
 ### S8 Image generation
 
-- **Model and settings:** `gemini-3.1-flash-image` through the official `google-genai` SDK behind an `ImageGenerator` adapter. Explicit `1:1`, `1K`, minimal thinking as a pilot setting.
-- **Inputs:** the reference rendition and the prompt.
-- **One dispatch, no automatic retries.** SDK retries are disabled or counted.
+- **Model and settings:** `gemini-3.1-flash-image` through the `google-genai` SDK behind an `ImageGenerator` adapter. Explicit 1:1, 1K, minimal thinking as a pilot setting.
+- **Inputs:** the prompt plus all reference renditions.
+- **One dispatch per candidate, no automatic retries.**
 - **Record** the requested and returned model, SDK version, request ID, usage and latency.
-- **Response parsing:** exactly one final image. No image, a refusal, corrupt bytes or multiple final images are classified errors.
+- **Response classification:** refusal, no image, corrupt bytes or multiple images.
 
 ### S9 Output gate
 
-Decode the image and check it is square with a long edge ≤1024. Store the canonical bytes and hand off to the evaluator. Nothing is post-edited. A generation-only run ends as `generated_unscored`.
+Decode the image and check it is square with a long edge ≤1024. Write `runs/<run_id>/candidates/c{i}.png` atomically. Nothing is post-edited.
 
-## 4. Model calls and limits per request
+### S10 Evaluation
+
+The standalone evaluator (document 05) scores each candidate. It receives:
+- the original references
+- the source text contract and TextPlan
+- ResolvedContext and guardrail policy
+- the candidate image
+- the candidate's `guardrail_status`
+
+It returns an EvalRecord with dimension verdicts and scores. The evaluator never calls generation. It also runs independently on stored images and in batch mode later.
+
+### S11 Selection (code)
+
+Candidates are ranked by, in order:
+1. **overall verdict tier:** `pass` > `unknown` > `fail` > not evaluated;
+2. **fewer failed required checks**;
+3. **higher overall score** (document 05 §7);
+4. **guardrail status:** `approved` > `approved_after_replan` > `rejected_after_replan`;
+5. lower `candidate_index` as a deterministic tie-break.
+
+The top candidate is presented:
+- If its verdict is `pass`, it is presented as **approved**.
+- Otherwise it is presented as **best available, not approved**, with its failed or unknown checks listed.
+
+A high score never overrides a failed required check.
+
+### S12 Export
+
+The pipeline writes `outputs/<request_id>/<run_id>/` containing:
+- `best.png`
+- `summary.json`: ranking table, per-candidate verdicts and scores, winner, reasons, guardrail flags, costs
+- `candidates/` with all candidate images
+
+`adgen export <run_id>` regenerates this folder from the state store.
+
+`runs/` and `outputs/` are gitignored. Curated golden and demo sets are copied into `data/` deliberately.
+
+## 4. Model calls and limits per request (N = 3)
 
 | Stage | Provider / proposed model | Max calls |
 |---|---|---|
-| S2 product analysis | OpenAI `gpt-6-sol` | 1 per unique reference (cached) |
+| S2 product analysis | OpenAI `gpt-6-sol` | 1 per unique reference set (cached) |
 | S3 extract selection | OpenAI `gpt-6-sol` | 1 (Exact: 0) |
-| S5 creative planning | OpenAI `gpt-6-sol` | 2 (initial + 1 replan) |
-| S6 guardrail review | OpenAI `gpt-6-sol` | 2 |
-| S8 image | Google `gemini-3.1-flash-image` | 1 |
+| S5 creative planning | OpenAI `gpt-6-sol` | 2 per candidate → 6 |
+| S6 guardrail review | OpenAI `gpt-6-sol` | 2 per candidate → 6 |
+| S8 image | Google `gemini-3.1-flash-image` | 1 per candidate → 3 |
+| S10 evaluation | per document 05 (OpenAI judge + local models) | bounded per candidate |
 
-Model IDs, reasoning efforts and timeouts live in versioned config (`config/pipeline.toml`), not in `.env`. They are proposals until the compatibility probe passes.
+Model IDs, efforts, timeouts, price tables and N live in `config/pipeline.toml`. Proposed timeouts are 120 s per image and 60 s per text call. Every call is recorded before dispatch. A dispatched call with no outcome becomes `unknown` and is never re-sent automatically. The run-level budget cap is checked before every dispatch.
 
-Proposed timeouts: 120 s per image, 60 s per text call. Every call is written to the state store before dispatch. A dispatched call with no recorded outcome becomes `unknown` and is never re-sent automatically.
-
-All LLM calls go through a small provider interface with an OpenAI implementation and a record/replay implementation for offline tests. No other LLM backend is implemented in this version.
+All LLM calls use one provider interface with an OpenAI implementation and a record/replay implementation for offline tests. No other LLM backend is implemented.
 
 ## 5. Credentials
 
-Keys are read from environment variables loaded from a gitignored `.env`. The repository commits only `.env.example` with empty placeholders:
+Keys come from a gitignored `.env`. The repository commits only `.env.example`:
 
 ```text
 GEMINI_API_KEY=
 OPENAI_API_KEY=
 ```
 
-Anyone running the pipeline supplies their own keys. Keys never appear in the state store, artifacts, logs, prompts or commits. Offline tests and replay need no keys.
+Users supply their own keys. Keys never appear in the state store, artifacts, logs, prompts or commits. Offline tests and replay need no keys. The local evaluator models need no keys; they need a one-time weight download (document 05 §6).
 
-## 6. State and artifacts
+## 6. Deferred
 
-Stage status, artifacts, model calls and events are recorded in the SQLite state store specified in [document 06](06-state-store.md). Artifacts are files under `runs/<run_id>/`, named by content hash. The store holds their paths and hashes. Resume skips stages that already succeeded with identical input hashes.
-
-## 7. Deferred
-
-Best-of-N, targeted repair, text overlay fallback, Flash-Lite comparison, the enrichment ablation, UI and alternative LLM backends. If one is enabled later, it must be named explicitly, given its own budget and evaluated separately.
+Targeted repair, text-overlay fallback, Flash-Lite comparison, the enrichment ablation, UI, hosted (remote) evaluator models and alternative LLM backends.

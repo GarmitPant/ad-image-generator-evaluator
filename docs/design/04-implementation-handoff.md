@@ -1,6 +1,6 @@
 # Implementation handoff
 
-Version 0.3 · 2026-09-26 · Generation implemented first; evaluator remains the main judged deliverable
+Version 0.4 · 2026-09-26 · Generation implemented first; the pipeline generates 3 candidates, evaluates each and presents the best; the evaluator remains the main judged deliverable
 
 ## 1. Mission
 
@@ -21,28 +21,26 @@ Progress checkpoints are kept in [docs/implementation-status.md](../implementati
 
 | Ticket | Deliverable | Exit evidence (offline unless marked live) |
 |---|---|---|
-| G0 | Scaffold: `pyproject.toml` (uv), package layout, `config/pipeline.toml`, `.env.example` placeholders, README setup | `pytest` runs green on an empty suite from a clean clone with no keys |
-| G1 | State store: schema, migrations, repository API, `adgen state init/show`, run lock, event log | Transition, resume/fingerprint, dispatched→unknown, budget-block and no-secret tests |
-| G2 | Contracts: AdRequest, `Geography`/`Season` enums, country table, band × season table, TextInput/SourceContract/TextPlan, ProductProfile, ResolvedContext, CreativePlan, GuardrailReview | Schema tests, hemisphere/month tests, enum-table completeness test |
-| G3 | S1 intake + S4 context resolution | Decode/limits/rendition/hash tests on `data/products/`; resolver tests for all 8×4 pairs |
+| G0 | Scaffold: `pyproject.toml` (uv), package layout, `config/pipeline.toml`, `.env.example`, README setup | `pytest` runs green on an empty suite from a clean clone with no keys |
+| G1 | State store: schema incl. candidate/evaluation/selection, migrations, repository API, `adgen state init/show`, lock, events | Transition, resume/fingerprint, dispatched→unknown, budget-block, per-candidate independence and no-secret tests |
+| G2 | Contracts: AdRequest (1–3 references, candidates 1–4), enums, country + band×season tables, text contracts, ProductProfile, ResolvedContext, CreativePlan, GuardrailReview | Schema tests, hemisphere/month tests, enum-table completeness |
+| G3 | S1 intake (multi-reference) + S4 context resolution | Decode/limits/rendition/hash/duplicate-reference tests on `data/products/`; resolver tests for all 8×4 pairs |
 | G4 | LLM provider interface: OpenAI client (structured output, no hidden retries), record/replay, cost estimation | Replay tests; missing recording fails without network |
-| G5 | S3 copy selection (Exact code, Extract call, validator) | Document 05 §3 validation cases via replay |
-| G6 | S2 product analysis (cached) | Cache reuse across runs; unknown handling via replay |
-| G7 | S5 planner + S6 guardrails (policy file, lexicons, reviewer, code decision, one replan, flag) | Roles/lengths-only input test (copy never in planner request); zone validation; approve / replan-approve / reject-then-generate paths |
-| G8 | S7 prompt compiler + S8 Gemini adapter + S9 output gate + orchestrator + `adgen generate` CLI | Deterministic prompt hash; response classification; ≤1024 gate; end-to-end replay run |
-| G9 (live) | Compatibility probe (document 02 §4) and first real run | Needs keys and an approved estimate; results recorded in the state store |
-| E0–E5 | Evaluator tickets (below) | As before |
-| Optional | Repair, best-of-N, ablations, UI, alternative LLM backend | Only after E5 |
+| G5 | S3 copy selection | Document 05 §3 validation cases via replay |
+| G6 | S2 product analysis (all references, cached by reference set) | Cache reuse; unknowns; inconsistency warnings via replay |
+| G7 | S5 planner (per candidate, told to differ from earlier plans) + S6 simple guardrails (`policy/guardrails.yaml`, keyword check, reviewer, one replan, flag) | Copy never in planner request; zone validation; approve / replan-approve / reject-then-generate / blocked paths |
+| G8 | S7 compiler + S8 Gemini adapter + S9 gate + orchestrator for N candidates + `adgen generate` | Deterministic prompt hashes; response classification; one failed candidate does not stop others; end-to-end replay run saving `candidates/c{i}.png` |
+| G9 (live) | Compatibility probe (document 02 §4) and first real 3-candidate run | Needs keys and an approved estimate |
+| E0 | Local evaluator models: pinned weights, `adgen models download`, interfaces, M1 benchmark | Install/memory/latency measured and recorded; offline tests use recorded evidence |
+| E1 | Text evaluation: source→copy checks, blind OCR, spatial one-to-one matching, CER/WER, rendering score | Document 05 text negative matrix on fixtures |
+| E2 | Product (multi-reference) + context + image-guardrail checks; OpenAI judge; composition and scores | Truth-table and score tests; unknown propagation |
+| G10 | S10 in-pipeline evaluation + S11 selection + S12 export (`outputs/…/best.png`, `summary.json`, `adgen export`) | Ranking-rule tests (verdict gate beats score); approved vs best-not-approved presentation; replay end-to-end |
+| E3 | Human-labelled dev examples and threshold freeze | Criteria and tuning splits recorded before held-out |
+| E4 | ~20 held-out requests (3 candidates each) + targeted negatives; **batched evaluation** command | Recorded observations, labels, offline regression tests |
+| E5 | Report and disclosure | Confusion counts, abstentions, per-stage text metrics, selection analysis (did the winner match the human-preferred candidate), clean-clone replay |
+| Optional | Repair, ablations, UI, hosted evaluator models, alternative LLM backend | Only after E5 |
 
-Evaluator tickets:
-- E0 contracts and rubric
-- E1 source→copy and render OCR/alignment
-- E2 product/context evidence
-- E3 dev labels and threshold freeze
-- E4 ~20 held-out images plus negatives
-- E5 report
-
-The evaluator reads lineage and `guardrail_status` from the state store.
+The evaluator reads lineage and each candidate's `guardrail_status` from the state store.
 
 ## 3. Module layout
 
@@ -58,10 +56,10 @@ src/adgen/
   stages/
     intake.py  product_analysis.py  copy_selection.py  context_resolution.py
     creative_planning.py  plan_guardrails.py  prompt_compilation.py
-    image_generation.py  output_gate.py
+    image_generation.py  output_gate.py  evaluation.py  selection.py  export.py
   orchestrator.py             # deterministic stage runner over the state store
-  cli.py                      # generate, state init/show, (later) evaluate, report
-  eval/                       # evaluator (document 05)
+  cli.py                      # generate, export, state init/show, models download, evaluate, report
+  eval/                       # evaluator (document 05); eval/local/ = OCR, detector, embedder interfaces
 tests/
 ```
 
@@ -71,6 +69,10 @@ One process and one SQLite file. No orchestration framework or agent runtime. Th
 
 ### Generation pipeline
 
+- 1–3 references accepted; 0, >3 or duplicate-hash references rejected. All references reach product analysis and the image call.
+- N candidates each get their own plan, guardrail result, prompt, image and evaluation. The planner for candidate i receives summaries of plans 1..i-1.
+- Selection: a `pass` candidate outranks any higher-scoring `fail`/`unknown` candidate. No passing candidate means the winner is shown as "best available, not approved". Ties resolve deterministically.
+- Every generated candidate image is saved and listed in `summary.json`, not just the winner.
 - Invalid geography or season values are rejected by the enums. Every enum value has a country-table row (completeness test).
 - AU/BR seasons resolve to southern-hemisphere months without renaming the season.
 - The planner request contains block IDs, roles and lengths, and **never** any TextPlan string or source text. The test asserts on the recorded request.
@@ -78,9 +80,9 @@ One process and one SQLite file. No orchestration framework or agent runtime. Th
 - Guardrail paths:
   - approved on first plan;
   - rejected then approved after replan;
-  - rejected twice → generation proceeds and `guardrail_status=rejected_after_replan` is recorded;
-  - schema-invalid twice → run `blocked`.
-- Reviewer evidence quotes that are absent from the plan are treated as invalid review output.
+  - rejected twice → generation proceeds and that candidate's `guardrail_status=rejected_after_replan` is recorded;
+  - schema-invalid twice → that candidate is `blocked`; the others continue.
+- A keyword hit counts as a rejection even when the reviewer approves.
 - The compiled prompt contains no raw source text and no planner rationale. Its hash is deterministic.
 - Keys never appear in the state store, recorded requests or artifacts.
 
@@ -136,4 +138,4 @@ Reports must include dimensional confusion counts, false accepts/rejects, absten
 
 ## 6. Initial implementation prompt
 
-> Read AGENTS.md and docs/design/01, 06, 05 and 04. Implement tickets G0–G8 in order, updating docs/implementation-status.md and committing at each checkpoint. Use OpenAI for LLM stages and Gemini for image generation only; write no Anthropic code. The planner sees text roles and lengths only. Guardrails allow one replan, then generate and flag. Every stage goes through the SQLite state store. Tests run offline with record/replay. No paid calls without a concrete approved estimate. Then implement evaluator tickets E0–E5.
+> Read AGENTS.md and docs/design/01, 06, 05 and 04. Implement tickets in the order of §2, updating docs/implementation-status.md and committing (authored by Garmit, no AI trailers) at each checkpoint. Use OpenAI for LLM stages and Gemini for image generation only; write no Anthropic code. Generate 3 candidates per request, each with its own plan. The planner sees text roles and lengths only. Guardrails are simple and predefined: one replan, then generate and flag. Evaluate every candidate with local vision models plus the OpenAI judge. Rank in code with verdicts gating scores, and export the best while keeping all. Every stage goes through the SQLite state store. Tests run offline with record/replay. No paid calls without a concrete approved estimate.

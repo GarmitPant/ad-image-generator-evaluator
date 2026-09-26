@@ -1,6 +1,6 @@
 # Evaluation architecture and source-to-image text contract
 
-Version 0.3 · 2026-09-26 · User-confirmed priorities, proposed technical contracts. v0.3 updates the generation-side references to match document 01 v0.3 (LLM planner, general guardrails, OpenAI LLM stages, state store)
+Version 0.4 · 2026-09-26 · User-confirmed priorities, proposed technical contracts. v0.4 aligns with document 01 v0.4: the evaluator runs inside the pipeline on 3 candidates per request, produces verdicts **and ranking scores**, handles 1–3 references, and uses local-only vision models plus the OpenAI judge
 
 ## 1. Scope and authority
 
@@ -23,7 +23,7 @@ Source text + text policy ──► content selector ──► TextPlan ──�
                                                                     ▼
                                            deterministic prompt compiler
                                                                     ▼
-                                                one Gemini image generation
+                                   N candidate Gemini generations (default 3)
                                                                     ▼
                                             final image + immutable manifest
                                                                     ▼
@@ -168,7 +168,7 @@ If TextPlan is missing for an externally supplied image, Exact mode can derive f
 
 ### Product fidelity
 
-Use the original reference, not merely a generated ProductProfile. Grounding DINO localizes candidate products; DINOv2 crop similarity is one identity signal. Report detector confidence, boxes, duplicate hypotheses, crop preprocessing and embedding values. A no-detection event is not conclusive proof of no product; use human calibration and optional independent visual evidence.
+Use the original references (1–3), not merely a generated ProductProfile. Compare the output crop with **each** reference and keep per-reference evidence. Identity similarity uses the best-matching reference, because different references show different views. Attribute checks may use any reference where the attribute is visible. Grounding DINO localizes candidate products; DINOv2 crop similarity is one identity signal. Report detector confidence, boxes, duplicate hypotheses, crop preprocessing and embedding values. A no-detection event is not conclusive proof of no product; use human calibration and optional independent visual evidence.
 
 Require an explicit attribute rubric: silhouette/proportions, key color/material, distinctive components, visible branding/label, count and main-subject visibility. Distinguish admissible viewpoint/lighting differences from altered identity. If labels are unreadable in the reference, do not invent a required transcription. If a mandatory identifying feature is unobservable in the output, return unknown/fail according to its predeclared visibility rule.
 
@@ -176,9 +176,25 @@ Same-category wrong-brand products are essential negatives. Global similarity al
 
 ### Context adherence
 
-Use atomic, observable predicates derived from the **resolved context and the general guardrail policy**: season/climate consistency (band × season contradiction table), absence of guardrail violations (stereotype, tokenism, religious decoration, age-restricted-product rules), and a plausible non-contradictory setting for the country. Do not derive pass criteria from the planner's own `context_cues`. That would let the generator define its own test. Planner cues may be checked as a separate diagnostic ("plan realization"). Separate required checks, forbidden contradictions, optional embellishments and ambiguous observations. Generic scenery can be plausible in several countries; do not claim precise geographic identification from weak cues. Report runs flagged `rejected_after_replan` separately, with their guardrail check results.
+Use atomic, observable predicates derived from the **resolved context and the general guardrail policy**: season/climate consistency (band × season contradiction table), absence of guardrail violations (stereotype, tokenism, religious decoration, age-restricted-product rules), and a plausible non-contradictory setting for the country. Do not derive pass criteria from the planner's own `context_cues`. That would let the generator define its own test. Planner cues may be checked as a separate diagnostic ("plan realization"). Separate required checks, forbidden contradictions, optional embellishments and ambiguous observations. Generic scenery can be plausible in several countries; do not claim precise geographic identification from weak cues. Report candidates flagged `rejected_after_replan` separately, with their guardrail check results.
+
+Guardrail compliance is also checked **on the image** as required context checks (the rules in `policy/guardrails.yaml`, asked as atomic questions). Plan-level guardrails in generation are a lightweight filter. The image-level check is the evaluated evidence.
 
 The judge answers each predicate with `yes|no|unknown`, region description and short evidence. Question dependencies prevent assigning correct color/season to an absent object. Required checks and their composition are defined in a versioned rubric, not generated after viewing the image. Raw freeform text is not a scene-style target.
+
+### Evaluator models (local only, confirmed 2026-09-26)
+
+| Evidence | Model | Where |
+|---|---|---|
+| Blind text detection and recognition with boxes | PaddleOCR PP-OCRv5 | Local |
+| Product localization (boxes, duplicate count) | `IDEA-Research/grounding-dino-tiny` | Local |
+| Crop identity similarity vs each reference | `facebook/dinov2-small` | Local |
+| Atomic yes/no/unknown questions (product attributes, context, image guardrails, source→copy semantics, blind fallback transcription) | OpenAI `gpt-6-sol` with vision | API |
+
+- **Machine:** the development machine is an Apple M1 with 8 GB of RAM. Load local models lazily, one at a time, on CPU or Apple's GPU (MPS).
+- **Weights:** pinned by revision and downloaded once with an explicit `adgen models download` step. Offline tests never download.
+- **First evaluator ticket:** measure install, memory and per-image latency on this machine. PaddleOCR on Apple Silicon is the main install risk. If it fails, the documented fallback is EasyOCR, which requires recalibration.
+- **Hosted inference** (Modal or similar) is deferred. Each local model sits behind an interface so a remote implementation can be added later without changing the evaluator logic.
 
 ### Technical gates
 
@@ -197,11 +213,15 @@ EvalRecord:
   product: DimensionResult
   context: DimensionResult
   overall_verdict: pass | fail | unknown
+  overall_score: 0–1 (ranking only; see below)
+  failed_required_checks: integer
+  candidate: {run_id, candidate_index, guardrail_status}
   execution_status: ok | degraded | failed
   errors, cost, latency, artifact_paths
 
 DimensionResult:
   verdict: pass | fail | unknown
+  score: 0–1
   observations: typed raw evidence
   required_checks: [{id, verdict, evidence_refs, threshold_ref?}]
   diagnostics: named values with units and definitions
@@ -209,7 +229,25 @@ DimensionResult:
 
 Code composes required checks: any reliable required failure establishes fail; otherwise any unresolved required check establishes unknown; all required checks passing establishes pass. Preserve failed checks even if some other subsystem crashes. `execution_status` independently describes whether evidence collection succeeded reliably.
 
-No weighted average may let a good background cancel wrong copy or a different product. Optional research scores remain diagnostic. The judges' emphasis on eval engineering does not imply invented numeric weights among text/product/context.
+No weighted average may let a good background cancel wrong copy or a different product. **Verdicts gate; scores only rank.**
+
+**Scores** (proposed, provisional, uncalibrated):
+- **Dimension score:** the average over required checks, with pass = 1, unknown = 0.5, fail = 0.
+- **text_rendering** instead averages per expected block `max(0, 1 − CER)`; a missing block scores 0.
+- **overall_score:** the unweighted mean of the four dimension scores.
+
+Text selection is shared by all candidates of a request, so it rarely changes the ranking.
+
+**Ranking** among a request's candidates (document 01 §3 S11), in order:
+1. verdict tier;
+2. fewer failed required checks;
+3. higher overall_score;
+4. guardrail status;
+5. candidate index.
+
+A candidate is presented as approved only if its verdict is `pass`. Otherwise the top candidate is shown as "best available, not approved".
+
+Scores are not calibrated probabilities or quality percentages. Report them with their definition. Do not claim that equal weights across dimensions are correct. The judges' emphasis on eval engineering does not imply numeric weights.
 
 ## 8. Evidence that the evaluator works
 
@@ -266,4 +304,4 @@ Spend is bounded by a run-wide ledger and explicit approved limits. One source-s
 
 ## 10. Implementation priority
 
-First deliver a functional single-image generator and immutable source/TextPlan/image artifacts. Then spend the majority of engineering effort on the evaluator, real fixtures, human labels, failure tests and a defensible report. Add candidate selection, repairs, additional model comparisons or UI only after the core evaluation evidence is complete.
+First deliver the generation pipeline (3 candidates, state store) with a functional evaluator inside it for scoring and selection. Then spend the majority of engineering effort on evaluator rigour: real fixtures, human labels, failure tests, batched evaluation and a defensible report. Repairs, additional model comparisons and UI come only after the core evaluation evidence is complete.

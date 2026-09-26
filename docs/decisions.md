@@ -44,3 +44,16 @@ Proposed consequences: one-image baseline; defer repairs/aesthetic planning; use
 | Reference input limit raised to 50 MP | Proposed (heineken-3.jpg ≈ 42.2 MP) | 40 MP |
 | `gpt-6-sol` for all OpenAI stages | Proposed; verify in compatibility probe | `gpt-6-luna` if recorded cases show parity |
 | Credits: ~$10 Gemini + ~$10 OpenAI | Recommendation to Garmit; purchase and spend approval pending | — |
+
+
+## 2026-09-26 — Candidates, selection and simplified guardrails, v0.4 (Garmit, via Claude Code session)
+
+| Decision | Status and reason | Supersedes / alternative considered |
+|---|---|---|
+| Guardrails are simple, functional, predefined: one static policy file (global rules + optional per-country notes), no web lookup | Confirmed; evals matter more | v0.3 per-rule evidence-verified review; web-searched regional rules (rejected) |
+| Generate 3 candidates per request, one creative plan per candidate | Confirmed | Alternative: one shared plan, N samples (cheaper, less diverse; rejected) |
+| Evaluate every candidate, present highest-ranked, save all images | Confirmed flow; ranking rule (verdict tier gates, then score) proposed | Single image, no ranking |
+| 1–3 reference images per product | Confirmed | Single reference |
+| Evaluator vision models local only (PaddleOCR, Grounding DINO tiny, DINOv2 small); hosted later if needed | Confirmed after reviewing the M1/8 GB machine | Modal / HF Endpoints / Replicate / API-only judge (deferred) |
+| Batched evaluation after single-request flow | Confirmed | — |
+| Credit estimate revised: 3 candidates make $10 Gemini tight (~$15 comfortable) | Recommendation | — |

@@ -6,7 +6,7 @@ G2 hackathon project: generate contextual display ads and demonstrate a rigorous
 
 ## Priority
 
-The hackathon emphasizes engineering around evaluation methods, criteria, automated tests and trustworthy evidence. Implementation builds the generation pipeline first (LLM planner with general guardrails, one Gemini image per request, SQLite state store), then the evaluator. Best-of-N, repairs and UI are deferred.
+The hackathon emphasizes engineering around evaluation methods, criteria, automated tests and trustworthy evidence. For each input the pipeline generates three candidate ads (each from its own LLM creative plan, with simple predefined guardrails), evaluates every candidate, and presents the highest-ranked one while saving all of them. State is recorded in a local SQLite store. Evaluator vision models run locally. Batched evaluation, repairs and UI come later.
 
 ## Providers and keys
 

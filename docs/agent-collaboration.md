@@ -39,3 +39,10 @@
 - Agent proposals accepted by Garmit: 8-country list, roles+lengths planner input, SQLite, stage map S1–S9.
 - Work performed: rewrote 01 (v0.3 pipeline, sub-agents, guardrails, prompt compiler), added 06 (state-store schema/rules), rewrote 02 (OpenAI/Gemini roles, `gpt-6-sol` proposal from OpenAI's model catalog, spend arithmetic), rewrote 04 tickets (G0–G9 then E0–E5), updated 05 context-adherence criteria so the evaluator does not grade against the planner's own cues, extended 03/decisions, added `.env.example` and docs/implementation-status.md.
 - Validation: cross-document consistency and link checks. No code, tests or paid inference yet.
+
+## 2026-09-26 — Design v0.4: candidates, selection, simplified guardrails (Claude Code)
+
+- Human instructions: keep guardrails simple and predefined (no web search); generate multiple ads per input, judge each and present the highest scored; save generated images; allow single or multiple references; confirm the evaluator needs visual models. Chose 3 candidates with one plan each, max 3 references, and local-only evaluator models after asking about hosted options (M1, 8 GB). Instructed: update specs and commit only; do not build the scaffold yet.
+- Agent proposals accepted: static policy file with optional country notes, code ranking rule with verdicts gating scores, `outputs/` export layout, candidate/evaluation/selection tables. Hosted-inference options (Modal, HF Endpoints, Replicate) presented and deferred.
+- Work performed: rewrote 01 (v0.4), extended 06 schema, updated 05 (scores, ranking, multi-reference product evidence, image-level guardrail checks, local model table), 04 tickets (G0–G10, E0–E5), 02 costs, 03/decisions, AGENTS/README, .gitignore (`outputs/`), implementation-status.
+- Validation: cross-document consistency and link checks only. No code, tests or paid inference.
