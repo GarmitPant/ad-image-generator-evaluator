@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.DS_Store
+work/
+runs/
+
+# Curated golden images, human labels and offline evaluation fixtures are
+# intended submission artifacts; do not blanket-ignore data/ or reports/.
