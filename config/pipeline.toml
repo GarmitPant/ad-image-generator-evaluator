@@ -1,4 +1,4 @@
-version = "generation/1"
+version = "generation/2"
 llm_model = "gpt-6-sol"
 image_model = "gemini-3.1-flash-image"
 analysis_effort = "low"

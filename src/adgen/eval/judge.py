@@ -59,6 +59,8 @@ def selection_prompt(contract, text_plan):
 
 # Image-guardrail rules are asked as inverse questions. GR-TEXT is covered by text rendering.
 SKIP_IMAGE_RULES = {"GR-TEXT"}
+# Reported but not required: whether the country is recognisable is subjective and uncalibrated.
+DIAGNOSTIC = {"C-REGION"}
 
 
 def visual_questions(profile, context, policy):
@@ -102,6 +104,10 @@ def visual_questions(profile, context, policy):
         )
     q["C-SETTING"] = (
         f"Is the setting plausible for {country}, with nothing that clearly contradicts it?",
+        "yes",
+    )
+    q["C-REGION"] = (
+        f"Would a typical viewer recognise this setting as {country} (or a specific region of it) from visible cues? Name the cues.",
         "yes",
     )
     for rule in policy["global_rules"]:

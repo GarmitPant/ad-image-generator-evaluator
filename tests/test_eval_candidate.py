@@ -132,3 +132,10 @@ def test_ranking_verdict_gates_score():
         ]
     )
     assert [r["candidate_index"] for r in ranked] == [2, 3, 1, 4]
+
+
+def test_region_recognisability_is_reported_but_never_decisive(state):
+    record = evaluate(state, "c1", ScriptedJudge(overrides={"C-REGION": "no"}))
+    region = [c for c in record["context"]["checks"] if c["id"] == "C-REGION"][0]
+    assert region["verdict"] == "fail" and region["required"] is False
+    assert record["context"]["verdict"] == "pass" and record["overall_verdict"] == "pass"

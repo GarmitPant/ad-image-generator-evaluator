@@ -6,6 +6,7 @@ from ..state import failure
 from ..util import digest
 from .compose import POINTS, check, compose, dimension
 from .judge import (
+    DIAGNOSTIC,
     SelectionJudgment,
     VisualJudgment,
     selection_prompt,
@@ -172,19 +173,13 @@ class Evaluator:
         def from_judge(qid):
             question, passing = questions[qid]
             a = answers.get(qid)
+            required = qid not in DIAGNOSTIC
             if a is None or a["answer"] == "unknown":
-                return check(
-                    qid,
-                    "unknown",
-                    "judge unavailable" if judged is None else "no answer/abstained",
-                    question=question,
-                )
+                reason = "judge unavailable" if judged is None else "no answer/abstained"
+                return check(qid, "unknown", reason, required, question=question)
+            verdict = "pass" if a["answer"] == passing else "fail"
             return check(
-                qid,
-                "pass" if a["answer"] == passing else "fail",
-                a["evidence"],
-                question=question,
-                answer=a["answer"],
+                qid, verdict, a["evidence"], required, question=question, answer=a["answer"]
             )
 
         judge_count = judged["product_count"] if judged else None

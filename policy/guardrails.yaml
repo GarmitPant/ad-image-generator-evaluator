@@ -1,14 +1,16 @@
-version: "guardrails/1"
+version: "guardrails/2"
+# v2 (2026-09-26, Garmit): separate stereotyping people and beliefs (banned) from regional style
+# (encouraged) so countries are visually distinguishable. Flags and religious sites stay banned.
 global_rules:
-  - {id: GR-STEREO, text: "No racial, national, ethnic or religious caricature or costume shorthand."}
-  - {id: GR-TOKEN, text: "Do not use flags, famous landmarks or iconic wildlife as the geography signal."}
-  - {id: GR-RELIGION, text: "No religious symbols, sites or ceremonies as decoration."}
+  - {id: GR-STEREO, text: "No racial, national, ethnic or religious caricature of people, and no traditional costume used as shorthand for a country. Regional architecture, materials, textiles and patterns, crafts, food and drink settings, street furniture and native plants are encouraged."}
+  - {id: GR-TOKEN, text: "No flags or national emblems. Landmarks and skylines may appear only as background context and must never dominate the product."}
+  - {id: GR-RELIGION, text: "No religious symbols, sites or ceremonies, including as background decoration."}
   - {id: GR-SEASON, text: "No visible cues contradicting the resolved seasonal scene policy."}
   - {id: GR-PEOPLE, text: "No identifiable real people. No minors with age-restricted products."}
   - {id: GR-ALCOHOL, text: "For alcohol: no minors, driving, excessive drinking or health claims."}
   - {id: GR-TEXT, text: "No invented scene text or logos. Preserve reference product branding and provider provenance markings."}
 keywords:
-  GR-TOKEN: [flag, flags, kangaroo, eiffel, taj mahal, statue of liberty]
+  GR-TOKEN: [flag, flags, national emblem]
   GR-RELIGION: [temple, mosque, church, shrine, religious ceremony]
 country_notes:
   AE: ["Alcohol products require review under this demo's advertising policy; this is not legal advice."]

@@ -1,0 +1,14 @@
+{
+  "request_id": "b1-18-bottle-us-summer-exact",
+  "product_images": [
+    "../../products/water-bottle.jpg"
+  ],
+  "geography": "US",
+  "season": "summer",
+  "text": {
+    "mode": "exact",
+    "source_text": "Hydration, upgraded."
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

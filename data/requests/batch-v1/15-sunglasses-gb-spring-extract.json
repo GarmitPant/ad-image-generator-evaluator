@@ -1,0 +1,17 @@
+{
+  "request_id": "b1-15-sunglasses-gb-spring-extract",
+  "product_images": [
+    "../../products/sunglasses.jpg"
+  ],
+  "geography": "GB",
+  "season": "spring",
+  "text": {
+    "mode": "extract",
+    "source_text": "Spring sale: 30% off classic black frames. Polarized lenses included. Not valid with other offers. Online only.",
+    "protected_phrases": [
+      "Not valid with other offers."
+    ]
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

@@ -11,7 +11,8 @@ from pathlib import Path
 from ..util import atomic_write, canonical
 
 DIMENSIONS = ("text_selection", "text_rendering", "product", "context")
-LABEL_DIMENSIONS = ("overall", *DIMENSIONS)
+LABEL_DIMENSIONS = ("overall", *DIMENSIONS, "region")
+LABEL_COLUMN = {"overall": "overall_verdict", "region": "region_recognisable"}
 
 
 def _seconds(start, end):
@@ -78,8 +79,17 @@ def collect(state, run_ids=None, include_synthetic=False):
         latest = {e["candidate_index"]: e for e in snap["evaluations"]}
         winner = snap["selection"]["winner_index"] if snap["selection"] else None
         text_plan = result("copy_selection")
+        reference_shas = [
+            r["artifact_id"]
+            for r in state.rows(
+                "SELECT artifact_id FROM stage_artifact WHERE exec_id=? AND direction='output' "
+                "AND label LIKE 'reference_%' ORDER BY label",
+                (stage[("intake", 0)]["exec_id"],),
+            )
+        ]
         requests.append(
             {
+                "reference_renditions": reference_shas,
                 "run_id": run["run_id"],
                 "request": request,
                 "mode": run["mode"],
@@ -151,6 +161,20 @@ def collect(state, run_ids=None, include_synthetic=False):
                         for c in (record[d]["checks"] if record else [])
                         if c["required"] and c["verdict"] == "unknown"
                     ],
+                    "region_recognisable": next(
+                        (
+                            c["verdict"]
+                            for c in record["context"]["checks"]
+                            if c["id"] == "C-REGION"
+                        ),
+                        None,
+                    )
+                    if record
+                    else None,
+                    "source_text": request["text"]["source_text"],
+                    "selected_copy": [b["text"] for b in text_plan["blocks"]]
+                    if text_plan
+                    else None,
                     "dinov2_best_similarity": next(
                         (
                             c["evidence"]["similarity"]["best"]
@@ -210,11 +234,8 @@ def agreement(labels):
     """Positive class = defect (fail). Unknown automated verdicts are abstentions, reported separately."""
     out = {}
     for dim in LABEL_DIMENSIONS:
-        items = [
-            (lab["label"], lab["row"]["overall_verdict" if dim == "overall" else f"{dim}_verdict"])
-            for lab in labels
-            if lab["dimension"] == dim
-        ]
+        column = LABEL_COLUMN.get(dim, f"{dim}_verdict")
+        items = [(lab["label"], lab["row"][column]) for lab in labels if lab["dimension"] == dim]
         if not items:
             continue
         tp = sum(h == "fail" and a == "fail" for h, a in items)
@@ -286,6 +307,21 @@ def build(state, out, run_ids=None, labels_path=None, include_synthetic=False):
         )
     atomic_write(out / "results.csv", buffer.getvalue().encode())
     atomic_write(out / "requests.jsonl", b"".join(canonical(q) + b"\n" for q in requests))
+    for q in requests:
+        q["reference_files"] = []
+        for sha in q.pop("reference_renditions"):
+            atomic_write(out / "references" / f"{sha[:12]}.png", state.read(sha))
+            q["reference_files"].append(f"references/{sha[:12]}.png")
+    refs_by_run = {q["run_id"]: q["reference_files"] for q in requests}
+    atomic_write(out / "labeling-sheet.html", labeling_sheet(public, refs_by_run).encode())
+    template = io.StringIO()
+    template_writer = csv.writer(template)
+    template_writer.writerow(["run_id", "candidate_index", "dimension", "label", "labeler", "note"])
+    for r in public:
+        if r["image"]:
+            for dim in LABEL_DIMENSIONS:
+                template_writer.writerow([r["run_id"][:8], r["candidate_index"], dim, "", "", ""])
+    atomic_write(out / "labels-template.csv", template.getvalue().encode())
     labels = read_labels(labels_path, rows)
     stats = agreement(labels)
     atomic_write(out / "contact-sheet.html", contact_sheet(public).encode())
@@ -296,6 +332,31 @@ def build(state, out, run_ids=None, labels_path=None, include_synthetic=False):
         "labels": len(labels),
         "out": str(out),
     }
+
+
+def labeling_sheet(rows, refs_by_run):
+    """Blind sheet for human labelling: inputs and images only, no automated verdicts or scores."""
+    cards = []
+    for r in rows:
+        if not r["image"]:
+            continue
+        refs = "".join(f"<img class='ref' src='{p}'>" for p in refs_by_run.get(r["run_id"], []))
+        copy = "".join(f"<li><code>{html.escape(t)}</code></li>" for t in r["selected_copy"] or [])
+        cards.append(
+            f"<div class='card'><img src='{r['image']}'><h3>{r['run_id'][:8]} · candidate {r['candidate_index']}</h3>"
+            f"<p><b>{r['geography']} / {r['season']}</b> · text mode {r['text_mode']}</p>"
+            f"<p>Source text:</p><pre>{html.escape(r['source_text'])}</pre><p>Copy that must appear exactly:</p><ul>{copy}</ul>"
+            f"<p>Reference product:</p>{refs}</div>"
+        )
+    return (
+        "<!doctype html><meta charset='utf-8'><title>Labeling sheet</title><style>body{font-family:system-ui;margin:16px}"
+        ".grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}.card{border:1px solid #ccc;border-radius:8px;padding:12px}"
+        ".card>img{width:100%}.ref{height:90px;margin-right:6px}pre{white-space:pre-wrap;background:#f4f4f4;padding:6px}</style>"
+        "<h1>Blind labeling sheet</h1><p>Label each candidate in labels.csv per dimension (overall, text_selection, "
+        "text_rendering, product, context, region). Evaluator results are deliberately not shown.</p><div class='grid'>"
+        + "".join(cards)
+        + "</div>"
+    )
 
 
 def contact_sheet(rows):
@@ -411,6 +472,7 @@ _Generated by `adgen report` from the local state store. Every number below is c
 - Requests: **{len(requests)}** · candidates: **{len(rows)}** · evaluated: **{len(evaluated)}**
 - Requests with an **approved** winner (winner passes every required check): **{approved}/{len(requests)}**
 - Human-labelled judgments: **{n_labels}** (see §6)
+- Country recognisable from the scene (diagnostic C-REGION, not a pass criterion): {_count(evaluated, "region_recognisable")}
 - Median generation latency per candidate: {_median([r["generation_latency_s"] for r in rows])} s · median evaluation latency: {_median([r["evaluation_latency_s"] for r in rows])} s
 - Estimated cost (report-only, from returned token usage): generation {round(sum(r["generation_cost_usd"] for r in rows), 3)} USD · evaluation judge {round(sum(r["evaluation_cost_usd"] for r in rows), 3)} USD · shared per-request {round(sum(q["shared_cost_usd"] for q in requests), 3)} USD
 
@@ -427,7 +489,7 @@ Verdicts are composed **in code**: any trusted required failure → fail; otherw
 | Text selection (source → copy) | S-SPANS, S-PROTECTED, S-CAPACITY, S-EXACT/S-FULL; Extract: SEL-MEANING, SEL-OMISSION, SEL-RELEVANCE | Code re-verification; judge failures must quote the source |
 | Text rendering (copy → pixels) | R-BLOCKS (each block rendered exactly, one-to-one), R-EXTRA (no duplicated/unplanned copy), R-LEGIBLE (proxy; never fails alone) | Blind PaddleOCR PP-OCRv6; lines grouped spatially; product-label text excluded via detector box; CER/WER |
 | Product (same object) | P1 exactly one (detector and judge must agree), P2 type, P3 shape, P4 colours/materials, P5 distinctive components, P6 branding (if legible in reference) | OpenAI judge sees references + ad; Grounding DINO for crop/count only; DINOv2 similarity is a non-required diagnostic. Position/orientation not scored |
-| Context | C-SEASON, C-CONTRA, C-SETTING, image guardrails GR-* | Same judge call; criteria from resolved context and static policy, never from the planner's own cues |
+| Context | C-SEASON, C-CONTRA, C-SETTING, image guardrails GR-* (C-REGION recognisability is reported, not required) | Same judge call; criteria from resolved context and static policy, never from the planner's own cues |
 
 Scores rank candidates only: per dimension, mean over required checks (pass 1, unknown 0.5, fail 0); text rendering = mean max(0, 1 − CER); overall = unweighted mean. Ranking rule: verdict tier → failed required checks → score → guardrail status → index. A higher score never overrides a failed check.
 

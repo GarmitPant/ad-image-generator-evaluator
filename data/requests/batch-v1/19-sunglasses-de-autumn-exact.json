@@ -1,0 +1,14 @@
+{
+  "request_id": "b1-19-sunglasses-de-autumn-exact",
+  "product_images": [
+    "../../products/sunglasses.jpg"
+  ],
+  "geography": "DE",
+  "season": "autumn",
+  "text": {
+    "mode": "exact",
+    "source_text": "Klassisch. Polarisiert."
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

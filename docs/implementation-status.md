@@ -20,7 +20,11 @@ Checkpoint maintained by the implementing agent. Current human instruction: fini
 
 Implementation and operating details: [generation runbook](generation-runbook.md). Design review and rationale: [implementation plan](generation-implementation-plan.md).
 
-## Evaluator build plan (active — resume here)
+## Batch v1 (active — resume here)
+
+Regional-style change implemented (policy `guardrails/2`, prompts `generation/2`, evaluator `evaluator/2` with diagnostic C-REGION; blind labeling sheet + labels template in `adgen report`). Runs from before this change are not used. Plan and exact commands: [batch-v1-plan.md](batch-v1-plan.md). Next: pilot (`scripts/run-batch.sh data/requests/batch-v1 2`), then freeze, full batch, report, Garmit's blind labels, final report.
+
+## Evaluator build plan (complete)
 
 Human instruction (2026-09-26): implement evaluation, connect it to generation, rank candidates, and produce a reproducible submission bundle (`submission/`: report.md, results.csv, results.json, contact-sheet.html, images/, evidence/, requests.jsonl) with a small human-labelled subset. Keep this checkpoint current so another agent can continue.
 

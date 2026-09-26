@@ -1,0 +1,14 @@
+{
+  "request_id": "b1-03-bottle-jp-spring-exact",
+  "product_images": [
+    "../../products/water-bottle.jpg"
+  ],
+  "geography": "JP",
+  "season": "spring",
+  "text": {
+    "mode": "exact",
+    "source_text": "Refill. Reuse. Repeat."
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

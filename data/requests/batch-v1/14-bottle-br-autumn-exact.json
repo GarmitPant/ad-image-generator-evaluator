@@ -1,0 +1,14 @@
+{
+  "request_id": "b1-14-bottle-br-autumn-exact",
+  "product_images": [
+    "../../products/water-bottle.jpg"
+  ],
+  "geography": "BR",
+  "season": "autumn",
+  "text": {
+    "mode": "exact",
+    "source_text": "Stay hydrated.\n500 ml • Keeps cold 24 h"
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

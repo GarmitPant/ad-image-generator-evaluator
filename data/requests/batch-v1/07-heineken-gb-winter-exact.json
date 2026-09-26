@@ -1,0 +1,14 @@
+{
+  "request_id": "b1-07-heineken-gb-winter-exact",
+  "product_images": [
+    "../../products/heineken-1.jpg"
+  ],
+  "geography": "GB",
+  "season": "winter",
+  "text": {
+    "mode": "exact",
+    "source_text": "Heineken Original\nWinter pints, done right."
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

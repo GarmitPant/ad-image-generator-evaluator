@@ -1,0 +1,18 @@
+{
+  "request_id": "b1-08-heineken-de-summer-extract",
+  "product_images": [
+    "../../products/heineken-1.jpg",
+    "../../products/heineken-2.jpg"
+  ],
+  "geography": "DE",
+  "season": "summer",
+  "text": {
+    "mode": "extract",
+    "source_text": "Heineken Original, brewed with pure malt since 1873. Now €1.49 per bottle at participating stores. Offer valid until 31 August. Enjoy responsibly.",
+    "protected_phrases": [
+      "Enjoy responsibly."
+    ]
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

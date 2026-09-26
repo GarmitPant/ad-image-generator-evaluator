@@ -2,45 +2,18 @@
 
 from .contracts import Geography, Season
 
+# Objective facts plus a neutral style note. Notes invite a specific city/region; they do not list
+# cues, so adding a country stays one row (no per-country or per-season scene registry).
+REGION_NOTE = "choose a specific city or region and make it recognisable through regional design"
 FACTS = {
-    "US": (
-        "United States",
-        "north",
-        "temperate",
-        "varied regional settings; avoid assuming a specific state",
-    ),
-    "GB": (
-        "United Kingdom",
-        "north",
-        "temperate",
-        "maritime climate; understated contemporary settings",
-    ),
-    "DE": ("Germany", "north", "temperate", "central European settings; regional variation"),
-    "JP": ("Japan", "north", "temperate", "regional variation; ordinary contemporary environments"),
-    "IN": (
-        "India",
-        "north",
-        "tropical",
-        "strong regional and monsoon variation; avoid nationwide weather claims",
-    ),
-    "AU": (
-        "Australia",
-        "south",
-        "temperate",
-        "strong regional variation; no iconic wildlife shortcuts",
-    ),
-    "BR": (
-        "Brazil",
-        "south",
-        "tropical",
-        "strong regional variation; avoid nationwide weather claims",
-    ),
-    "AE": (
-        "United Arab Emirates",
-        "north",
-        "arid",
-        "arid climate; contemporary settings; no religious decor",
-    ),
+    "US": ("United States", "north", "temperate", "large regional variety; " + REGION_NOTE),
+    "GB": ("United Kingdom", "north", "temperate", "maritime climate; " + REGION_NOTE),
+    "DE": ("Germany", "north", "temperate", "central European climate; " + REGION_NOTE),
+    "JP": ("Japan", "north", "temperate", "strong seasonal contrast; " + REGION_NOTE),
+    "IN": ("India", "north", "tropical", "monsoon June-September varies by region; " + REGION_NOTE),
+    "AU": ("Australia", "south", "temperate", "large regional variety; " + REGION_NOTE),
+    "BR": ("Brazil", "south", "tropical", "large regional variety; " + REGION_NOTE),
+    "AE": ("United Arab Emirates", "north", "arid", "arid climate; " + REGION_NOTE),
 }
 MONTHS = {"spring": [3, 4, 5], "summer": [6, 7, 8], "autumn": [9, 10, 11], "winter": [12, 1, 2]}
 

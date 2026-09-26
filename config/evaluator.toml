@@ -1,5 +1,5 @@
 # Evaluator settings. Thresholds are provisional pilot values until dev-set calibration (docs/design/05 §8).
-version = "evaluator/1"
+version = "evaluator/2"  # v2 adds diagnostic C-REGION
 judge_effort = "medium"
 
 # Local vision models, loaded offline from the Hugging Face / PaddleX caches at these pins.

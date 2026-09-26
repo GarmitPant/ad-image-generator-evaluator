@@ -1,0 +1,19 @@
+{
+  "request_id": "b1-20-heineken-br-winter-extract",
+  "product_images": [
+    "../../products/heineken-1.jpg",
+    "../../products/heineken-2.jpg",
+    "../../products/heineken-3.jpg"
+  ],
+  "geography": "BR",
+  "season": "winter",
+  "text": {
+    "mode": "extract",
+    "source_text": "Heineken Original. Refreshing taste, pure malt. Buy 2, get 1 free this week only. Enjoy responsibly.",
+    "protected_phrases": [
+      "Enjoy responsibly."
+    ]
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

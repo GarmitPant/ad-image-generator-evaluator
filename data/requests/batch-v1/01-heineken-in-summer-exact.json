@@ -1,0 +1,16 @@
+{
+  "request_id": "b1-01-heineken-in-summer-exact",
+  "product_images": [
+    "../../products/heineken-1.jpg",
+    "../../products/heineken-2.jpg",
+    "../../products/heineken-3.jpg"
+  ],
+  "geography": "IN",
+  "season": "summer",
+  "text": {
+    "mode": "exact",
+    "source_text": "Heineken Original\nMade for monsoon evenings.\nEnjoy responsibly."
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

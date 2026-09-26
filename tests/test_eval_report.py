@@ -53,3 +53,9 @@ def test_report_bundle_from_evaluated_demo_with_labels(tmp_path, capsys):
         "| text_rendering | 1 | 0 | 0 | 0 | 1 | 0 | 0.0 |" in report
     )  # the false accept is reported
     assert "images/" in (out / "contact-sheet.html").read_text()
+    sheet = (out / "labeling-sheet.html").read_text()
+    assert (
+        "references/" in sheet and "overall_verdict" not in sheet and "score" not in sheet
+    )  # blind
+    template = list(csv.DictReader((out / "labels-template.csv").open()))
+    assert len(template) == 3 * 6 and {t["label"] for t in template} == {""}

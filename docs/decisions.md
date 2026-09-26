@@ -108,3 +108,15 @@ Detailed differences and operational limits: [generation runbook](generation-run
 | Image rule GR-TEXT not asked of the judge; unplanned text is judged by OCR rendering checks | Avoids the judge flagging the intended ad copy |
 | Proposed success criteria written into the report before results: no human-labelled failure accepted; false rejects ≤20% of labelled passes; abstentions reported | Proposed targets; not yet measured |
 | Known score weakness: text-rendering score is CER-based, so duplicated copy lowers the verdict but not the score | Ranking still correct because verdicts gate; stated in limitations |
+
+
+## 2026-09-26 — Regional style guardrails v2 and batch v1 (Garmit, via Claude Code session)
+
+| Decision | Status and reason | Supersedes |
+|---|---|---|
+| Separate stereotyping people and beliefs (banned) from regional style (encouraged). Landmarks and skylines allowed in the background; native wildlife and plants allowed; the planner must make the country recognisable through ≥2 regional cues and may pick a specific city or region | Confirmed by Garmit: countries were hard to tell apart | guardrails/1 bans on landmarks and wildlife; "understated contemporary" country notes |
+| Flags, national emblems and religious sites stay banned, even in the background | Agent recommendation, not overridden by Garmit | — |
+| C-REGION ("recognisable as {country}?") is a diagnostic, not required | Agent recommendation, not overridden; subjective and uncalibrated; human `region` labels can calibrate it | — |
+| Versions bumped (generation/2, guardrails/2, evaluator/2); only new runs count | Confirmed by Garmit | Earlier runs, which remain as history |
+| Batch v1: 20 requests × 3 candidates covering all countries, seasons, products and text modes plus deliberate hard cases; pilot 2, then freeze, then run all as held-out with provisional thresholds | Agent plan per Garmit's request | — |
+| Blind labelling: sheet without verdicts; labels template for every candidate × 6 dimensions (overall, 4 dimensions, region) | Implemented for the credibility check | — |

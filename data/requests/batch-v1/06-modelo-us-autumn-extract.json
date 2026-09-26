@@ -1,0 +1,17 @@
+{
+  "request_id": "b1-06-modelo-us-autumn-extract",
+  "product_images": [
+    "../../products/modelo.jpg"
+  ],
+  "geography": "US",
+  "season": "autumn",
+  "text": {
+    "mode": "extract",
+    "source_text": "Modelo Especial is back for game day. Up to 20% off 12-packs at selected stores this weekend only. Must be 21+ to purchase. Please drink responsibly.",
+    "protected_phrases": [
+      "Please drink responsibly."
+    ]
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

@@ -1,0 +1,16 @@
+{
+  "request_id": "b1-12-heineken-ae-summer-exact",
+  "product_images": [
+    "../../products/heineken-1.jpg",
+    "../../products/heineken-2.jpg",
+    "../../products/heineken-3.jpg"
+  ],
+  "geography": "AE",
+  "season": "summer",
+  "text": {
+    "mode": "exact",
+    "source_text": "Heineken Original\nCold. Crisp. Refreshing."
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

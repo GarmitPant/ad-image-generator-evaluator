@@ -1,0 +1,14 @@
+{
+  "request_id": "b1-13-modelo-au-winter-exact",
+  "product_images": [
+    "../../products/modelo.jpg"
+  ],
+  "geography": "AU",
+  "season": "winter",
+  "text": {
+    "mode": "exact",
+    "source_text": "Modelo Especial\nCrafted in Mexico."
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

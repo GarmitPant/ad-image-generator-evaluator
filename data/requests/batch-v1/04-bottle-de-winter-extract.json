@@ -1,0 +1,17 @@
+{
+  "request_id": "b1-04-bottle-de-winter-extract",
+  "product_images": [
+    "../../products/water-bottle.jpg"
+  ],
+  "geography": "DE",
+  "season": "winter",
+  "text": {
+    "mode": "extract",
+    "source_text": "Our insulated steel bottle keeps drinks hot for 12 hours and cold for 24 hours. Leak-proof lid. Not dishwasher safe. Available in forest green.",
+    "protected_phrases": [
+      "Leak-proof lid."
+    ]
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

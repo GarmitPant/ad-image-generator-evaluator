@@ -1,0 +1,14 @@
+{
+  "request_id": "b1-11-bottle-in-winter-extract",
+  "product_images": [
+    "../../products/water-bottle.jpg"
+  ],
+  "geography": "IN",
+  "season": "winter",
+  "text": {
+    "mode": "extract",
+    "source_text": "Meet the bottle that goes everywhere with you. Our founder started this company in a small garage in 2019. Double-wall insulation keeps water cold for 24 hours. Plastic-free. Our customer service team is available Monday to Friday."
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}
