@@ -25,3 +25,10 @@
 - Work performed: introduced the evaluation/text-contract spec; separated source-selection fidelity from image-rendering fidelity; replaced generation-first handoff with evaluator-first tickets; simplified proposed generation to one image; reconciled root instructions, model roles and decision register.
 - Validation: documentation references, current-contract consistency and preserved historical-context integrity checked. No application code, paid inference or empirical accuracy claims added.
 - Design status: explicit priorities/modes confirmed; proposed limits, model choices, matching/calibration details remain subject to pilot evidence. Budget remains unapproved.
+
+## 2026-09-26 — Reference product images added (Claude Code)
+
+- Human instruction: pull `~/Downloads/Reference Images` into the workspace and repo; commits must be authored by Garmit, not Claude Code.
+- Work performed: copied six originals byte-for-byte to `data/products/` (SHA-256 verified against source); recorded Unsplash provenance from download metadata, per-image evaluation roles, trademark limitation, and that `heineken-3.jpg` (~42.2 MP) exceeds the proposed 40 MP input limit.
+- Validation: hash equality with source files; visual inspection of downscaled previews. No code, paid inference or design changes.
+- Next: Garmit to supply pending design changes before implementation begins.
