@@ -32,3 +32,10 @@
 - Work performed: copied six originals byte-for-byte to `data/products/` (SHA-256 verified against source); recorded Unsplash provenance from download metadata, per-image evaluation roles, trademark limitation, and that `heineken-3.jpg` (~42.2 MP) exceeds the proposed 40 MP input limit.
 - Validation: hash equality with source files; visual inspection of downscaled previews. No code, paid inference or design changes.
 - Next: Garmit to supply pending design changes before implementation begins.
+
+## 2026-09-26 — Generation design v0.3 (Claude Code)
+
+- Human instructions: Claude Code is the implementing agent and keeps checkpoints. OpenAI API for text models, Gemini for image generation; no Anthropic implementation now. Start with the generation pipeline. Add an LLM planner. Replace the per geography×season registry with general anti-stereotype guardrails and predefined enums (8 countries accepted). One replan, then generate and flag in evals. SQLite state store as an architectural requirement, set up locally with instructions. Planner gets text roles and lengths only. Commit placeholder keys only.
+- Agent proposals accepted by Garmit: 8-country list, roles+lengths planner input, SQLite, stage map S1–S9.
+- Work performed: rewrote 01 (v0.3 pipeline, sub-agents, guardrails, prompt compiler), added 06 (state-store schema/rules), rewrote 02 (OpenAI/Gemini roles, `gpt-6-sol` proposal from OpenAI's model catalog, spend arithmetic), rewrote 04 tickets (G0–G9 then E0–E5), updated 05 context-adherence criteria so the evaluator does not grade against the planner's own cues, extended 03/decisions, added `.env.example` and docs/implementation-status.md.
+- Validation: cross-document consistency and link checks. No code, tests or paid inference yet.

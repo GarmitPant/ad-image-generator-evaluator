@@ -1,11 +1,11 @@
 # Challenges and decision history
 
-Version 0.2 · 2026-09-26
+Version 0.3 · 2026-09-26
 
 ## 1. Confirmed changes
 
 - This repository holds implementation and design.
-- Evaluation engineering is the main deliverable; generation only needs to function.
+- Evaluation engineering is the main judged deliverable; generation is implemented first (v0.3).
 - Freeform text is source content, not look-and-feel instructions.
 - User selects Exact or Extract mode; optional protected phrases remain unchanged.
 - Text evaluation must cover both selection from source and actual rendering.
@@ -26,21 +26,23 @@ These requirements come from Garmit's latest messages. Model IDs, extraction imp
 | P1 | Content/style separation | Copy mentioning “winter” overrides structured summer scene | Never use raw source as creative instructions; selected strings are literal display content |
 | P1 | Selection variability | Several extractions are valid, one gold string rejects alternatives | Label required facts/qualifiers and acceptable omission rather than one exact output |
 | P1 | Small sample / tuning leakage | Thresholds tuned on held-out data or failures excluded | Freeze dev decisions; retain all attempts, report counts and split limitations |
-| P1 | Event time | Generation polish and dependency installs displace evaluation | One-image baseline; probe OCR/weights early; defer creative planner/repairs/UI |
+| P1 | Event time | Generation work displaces evaluation | One image per request; bounded planner/guardrail calls; probe OCR/weights early; defer repairs/UI |
+| P0 | Stereotyped geography | Planner encodes places through people, dress, flags or wildlife | General guardrail policy, code lexicons plus reviewer, one replan, flag carried into evaluation |
+| P1 | Planner self-grading | Evaluator checks the planner's own cues | Context predicates come from resolved context and policy, not from CreativePlan |
 
 ## 3. Decision register
 
 | ID | Current decision / proposal | Status |
 |---|---|---|
 | D01 | Whole-input preservation applies to Exact; Extract permits selected spans | v0.1 blanket rule superseded by user-confirmed modes |
-| D02 | Separate content preparation and rendering responsibilities; aesthetic planner optional | Revised after evaluation-priority clarification |
+| D02 | Separate content preparation and rendering responsibilities; aesthetic planner optional | Separation retained; "planner optional" superseded by D17 |
 | D03 | Exact uses code; Extract selects relevant source-backed content | Modes confirmed; extractive-only implementation proposed |
 | D04 | One image call and no automatic repair initially | Supersedes proposed two-candidate/one-repair baseline; proposed simplification |
 | D05 | Strict square ≤1024 baseline | Retained proposed technical policy |
 | D06 | Reliability separate from quality verdict; unknown is not pass | Retained |
 | D07 | No initial ranking; accept only fully passing singleton output | Supersedes unnecessary candidate tie-breaking work |
 | D08 | Product identity needs more than embedding similarity | Retained |
-| D09 | Locale-scoped scene profiles; source prose has no style authority | Retained and clarified |
+| D09 | Locale-scoped scene profiles; source prose has no style authority | Scene-profile part superseded by D18; "source prose has no style authority" retained |
 | D10 | Product-label text separated spatially from ad copy | Retained; role/multiplicity checks needed |
 | D11 | Overlay/compositing deferred | Retained |
 | D12 | Evaluate source→copy and copy→render independently | Expanded to prevent selection errors being hidden by accurate rendering |
@@ -48,6 +50,13 @@ These requirements come from Garmit's latest messages. Model IDs, extraction imp
 | D14 | Freeze thresholds before holdout; targets are not results | Retained |
 | D15 | Shared repository for implementation and design | Confirmed by Garmit |
 | D16 | Evaluation methods, criteria and evidence receive engineering priority | Confirmed by Garmit; no numeric judging weights supplied |
+| D17 | LLM creative planner (S5) designs scene/layout; sees text roles + lengths only | Confirmed by Garmit (v0.3); supersedes the "planner optional" part of D02 |
+| D18 | Geography/season enums + per-country facts row; general guardrails instead of per-pair registry | Confirmed by Garmit; supersedes D09's locale-scoped scene profiles |
+| D19 | Guardrails: code checks + LLM reviewer; one replan; then generate and flag `rejected_after_replan` | Confirmed by Garmit |
+| D20 | SQLite state store for stage state, artifacts, calls, events | Confirmed architectural requirement; schema proposed in document 06 |
+| D21 | OpenAI for LLM stages; Gemini for images; no Anthropic code now | Confirmed by Garmit; model IDs proposed |
+| D22 | Generation implemented before evaluator | Confirmed by Garmit; evaluation emphasis unchanged |
+| D23 | Repository commits placeholder `.env.example` only; users supply keys | Confirmed by Garmit |
 
 Prior rationale is preserved in Git history. The root decision register records human direction; do not infer collective architecture approval from repository setup.
 

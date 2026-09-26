@@ -2,14 +2,19 @@
 
 ## Scope and authority
 
-This repository contains both design and implementation for Garmit's G2 hackathon project. Another coding agent implements here; this design collaboration handles research/specification. Do the work authorized by the current user instruction; documentation changes alone do not authorize paid inference or unrequested application implementation.
+This repository contains both design and implementation for Garmit's G2 hackathon project. Claude Code is the implementing agent and maintains checkpoints in docs/implementation-status.md. Do the work authorized by the current user instruction; documentation changes alone do not authorize paid inference or unrequested application implementation.
 
-Read README.md, docs/design/05-evaluation-and-text-contract.md, docs/design/01-generation-pipeline.md and docs/design/04-implementation-handoff.md. Garmit's latest clarification takes precedence over earlier design assumptions. docs/context/ is a historical context bank, including its obsolete AGENT_BRIEF.md; never copy that over this file.
+Read README.md, docs/implementation-status.md, docs/design/01-generation-pipeline.md, docs/design/06-state-store.md, docs/design/05-evaluation-and-text-contract.md and docs/design/04-implementation-handoff.md. Garmit's latest clarification takes precedence over earlier design assumptions. docs/context/ is a historical context bank, including its obsolete AGENT_BRIEF.md; never copy that over this file.
 
 ## Confirmed direction
 
-- Automated evaluation is the primary engineering deliverable: defensible methods, criteria, evidence, calibration, offline tests and honest results. Generation only needs to function.
-- Python; geography and season strongly typed. Use organizer-allowed Gemini image generation; published generated images have long edge ≤1024 px.
+- Automated evaluation is the primary judged deliverable: defensible methods, criteria, evidence, calibration, offline tests and honest results. Implementation order: generation pipeline first, then evaluator.
+- Python; geography is an enum of 8 countries (US, GB, DE, JP, IN, AU, BR, AE) with one facts row each; season is an enum. Use organizer-allowed Gemini image generation; published generated images have long edge ≤1024 px.
+- Providers: OpenAI for all LLM stages, Google Gemini for image generation. Do not write Anthropic/Claude code for now.
+- An LLM creative planner designs scene/layout from product profile + resolved context and sees text roles/lengths only, never the copy. General guardrails (no stereotypes/tokenism, season consistency, etc.) replace per-country-season registries; code checks + LLM reviewer, one replan, then generate and flag.
+- Every stage runs through the SQLite state store (docs/design/06-state-store.md).
+- Commit only `.env.example` with empty placeholders; users supply their own keys.
+- Commits are authored by Garmit; do not add AI co-author trailers.
 - Freeform text is content to display, not instructions about scene or style.
 - User selects Exact or Extract mode. Exact preserves all input content. Extract selects relevant spans; optional protected phrases stay unchanged. Freeze selected copy before rendering.
 - Evaluate source-to-selected-copy fidelity AND selected-copy-to-image rendering fidelity. Rendering correct text from an unfaithful selection is not a passing result.
@@ -19,7 +24,7 @@ Read README.md, docs/design/05-evaluation-and-text-contract.md, docs/design/01-g
 
 ## Current proposed safeguards
 
-- Functional baseline: one source selection call when Extract is used, optional cached reference analysis, deterministic scene/layout compilation, one image call. Exact selection is code. Do not add separate creative planning just for architectural complexity.
+- Generation: cached product analysis, Exact-in-code or one Extract selection call, code context resolution, planner (≤2 calls), guardrail review (≤2 calls), code prompt compilation, one image call. Every call bounded, recorded before dispatch, never silently retried.
 - Initial extraction is source-span based; semantic checks catch misleading omissions even if every chosen word occurs in the input. No unsupported paraphrase.
 - Validate schemas and span references in code. Keep source, policy, protected spans, plan, reference, image and evaluator versions immutable and hashed.
 - A source/plan selector cannot define its own passing criteria after seeing results. Human gold requirements are independently labelled.

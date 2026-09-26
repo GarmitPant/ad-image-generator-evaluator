@@ -1,6 +1,6 @@
 # Evaluation architecture and source-to-image text contract
 
-Version 0.2 · 2026-09-26 · User-confirmed priorities, proposed technical contracts
+Version 0.3 · 2026-09-26 · User-confirmed priorities, proposed technical contracts. v0.3 updates the generation-side references to match document 01 v0.3 (LLM planner, general guardrails, OpenAI LLM stages, state store)
 
 ## 1. Scope and authority
 
@@ -18,7 +18,7 @@ This document is the primary evaluator contract. Model choices and numeric quali
 
 ```text
 Product image ──► normalize + optional cached product profile ──────────┐
-Geography + season ──► reviewed scene profile ────────────────────────┤
+Geography + season ──► resolved context ──► planner + guardrails ───┤
 Source text + text policy ──► content selector ──► TextPlan ───────────┤
                                                                     ▼
                                            deterministic prompt compiler
@@ -36,7 +36,7 @@ Source text + text policy ──► content selector ──► TextPlan ──�
                                typed evidence + code-composed verdict + report
 ```
 
-The selector may reuse the proposed Gemini 3.8 Flash analysis/planning client. It has no tools and cannot change scene context or reference facts. Prefer one structured text-selection call and one image call; cached product analysis is shared. Fixed layouts and deterministic context expansion are sufficient for baseline generation. A dedicated aesthetic planner is optional after the evaluator works.
+The selector uses the OpenAI structured client (proposed `gpt-6-sol`). It has no tools and cannot change scene context or reference facts. The creative planner (document 01 §3 S5) designs the scene from the product profile and resolved context, and sees only text roles and lengths, never the copy. Guardrail status (`approved`, `approved_after_replan`, `rejected_after_replan`) is read from the state store and reported by the evaluator.
 
 Evaluation is a library/CLI boundary, not a hidden helper inside generation. The same evaluator must run on generated outputs, curated genuine outputs, mutated images and replay fixtures without calling generation. This makes its behavior independently testable.
 
@@ -111,7 +111,7 @@ Do not silently fall back to “first 120 characters” when selection fails. Re
 
 The generation compiler has independent fields:
 
-- Visual scene: typed geography, season, reviewed scene profile and product reference.
+- Visual scene: typed geography, season, resolved context, validated CreativePlan and product reference.
 - Copy to render: frozen TextPlan blocks with exact strings and simple placement guidance.
 
 Do not send raw freeform prose as creative instructions. Give the image model only selected render strings, clearly labelled as literal copy, plus the independent scene plan. A line such as “Winter savings” is rendered as text; it does not override a structured summer scene. An explicit input conflict may be reported separately without silently rewriting either input.
@@ -176,7 +176,7 @@ Same-category wrong-brand products are essential negatives. Global similarity al
 
 ### Context adherence
 
-Use atomic, observable predicates tied to geography/season scene profiles. Separate required positive cues, forbidden contradictions, optional embellishments and ambiguous observations. Generic scenery can be plausible in several countries; do not claim precise geographic identification from weak cues.
+Use atomic, observable predicates derived from the **resolved context and the general guardrail policy**: season/climate consistency (band × season contradiction table), absence of guardrail violations (stereotype, tokenism, religious decoration, age-restricted-product rules), and a plausible non-contradictory setting for the country. Do not derive pass criteria from the planner's own `context_cues`. That would let the generator define its own test. Planner cues may be checked as a separate diagnostic ("plan realization"). Separate required checks, forbidden contradictions, optional embellishments and ambiguous observations. Generic scenery can be plausible in several countries; do not claim precise geographic identification from weak cues. Report runs flagged `rejected_after_replan` separately, with their guardrail check results.
 
 The judge answers each predicate with `yes|no|unknown`, region description and short evidence. Question dependencies prevent assigning correct color/season to an absent object. Required checks and their composition are defined in a versioned rubric, not generated after viewing the image. Raw freeform text is not a scene-style target.
 

@@ -1,91 +1,69 @@
 # Model choices and source audit
 
-Researched 2026-09-26. Capability statements below are documentation-backed; task suitability is a recommendation awaiting a pilot. No model was benchmarked or called for inference in this design session.
+Version 0.3 · 2026-09-26. Capability statements are documentation-backed. Task suitability is a proposal awaiting the compatibility probe. No model has been called or benchmarked.
 
-## 1. Recommended division of work
+## 1. Providers (confirmed by Garmit, 2026-09-26)
 
-v0.2 priority update: generation is a functional baseline; evaluation is the main engineering deliverable. User-confirmed Exact/Extract modes supersede the old whole-input-verbatim assumption. Models below are options, not a requirement to install every component before seeing a working evaluator.
+- **Google Gemini API:** image generation only.
+- **OpenAI API:** all text and vision LLM stages, in both generation and evaluation.
+- **No Anthropic/Claude implementation for now.** Claude models may be a future backup. No client, config or code path for them is written in this version.
 
-| Responsibility | Initial choice | Why this choice | What would change it |
-|---|---|---|---|
-| Architecture/specification in this chat | GPT-6 Astra with high reasoning effort; increase effort for difficult reviews | Quality-first reasoning choice, outside the runtime pipeline | User's selected model and available limits |
-| Product reference analysis | `gemini-3.8-flash`, structured vision input | One Google integration; extract visible facts once per reference | Missed distinguishing features on reviewed pilot photos |
-| Extract-mode content selection | `gemini-3.8-flash`, structured call | Select source-backed relevant text and protected phrases; no visual art direction | Semantic selection failures on independently labelled plans |
-| Aesthetic planning | Code templates initially | Sufficient for functional generation; prioritize evaluator effort | Add a creative model only after evaluator validation |
-| Image generation and repair | `gemini-3.1-flash-image` | Organizer-allowed; reference-driven generation/editing | An evidence-backed comparison favors allowed Lite for an explicit mode |
-| Exact-mode content | **No model** | Entire source is binding, subject to render-capacity validation | User explicitly switches to Extract |
-| Final prompt assembly, validation, routing | **Python code** | No ambiguity about exact obligations; repeatable hashes | No current reason to add a model |
-| Headline/label OCR | PP-OCRv5 via PaddleOCR | Local text boxes and recognition evidence | Installation/latency failure: explicitly switch to EasyOCR and recalibrate |
-| Product localization | `IDEA-Research/grounding-dino-tiny` | Proposed baseline consistent with Garmit's experience | Pilot shows unacceptable misses or hardware cost |
-| Crop similarity | `facebook/dinov2-small` | Low-complexity embedding baseline; compare original vs output crop | Same-category swaps pass too often; use stronger attribute checks before adding more embeddings |
-| Semantic selection / visual judge | `claude-sonnet-5`, separate prompts | Independent evidence for source→copy meaning and image-level product/context criteria | Human-labelled calibration favors another judge within latency/budget |
-| Judge research comparator | `claude-opus-5-5` on a small fixed calibration subset only | Tests whether a larger model fixes relevant mistakes | Skip unless basic pipeline and labels are complete |
+## 2. Roles
 
-OpenAI describes Astra as its most capable model for complex reasoning/research. “Use high effort for this design” is our workflow recommendation, not a measured optimum. The assistant has not changed the current chat's model selection. [Official model page](https://developers.openai.com/api/docs/models/gpt-6-astra)
+| Responsibility | Proposed choice | Notes |
+|---|---|---|
+| Product analysis (S2) | `gpt-6-sol`, low effort, vision + structured output | Cached per reference |
+| Extract copy selection (S3) | `gpt-6-sol`, medium effort | Spans only |
+| Creative planning (S5) | `gpt-6-sol`, medium effort | Sees text roles and lengths only |
+| Guardrail review (S6) | `gpt-6-sol`, low effort, separate prompt | Same family as the planner, so independence is limited; disclose it |
+| Image generation (S8) | `gemini-3.1-flash-image`, 1:1, 1K | Organizer-allowed; Flash-Lite deferred |
+| Prompt assembly, validation, routing, verdicts | Python code | — |
+| Evaluator semantic and visual judge | `gpt-6-sol` (proposal) | Cross-family relative to the Gemini generator; same family as the planner, so it must not take planner outputs as criteria |
+| OCR | PP-OCRv5 (PaddleOCR) | Unchanged proposal |
+| Product localization / crop similarity | Grounding DINO tiny / DINOv2 small | Unchanged proposal |
+| Cheaper alternative | `gpt-6-luna` | Use only if a stage shows equal behaviour on recorded cases at lower cost; don't assume it |
 
-Gemini 3.8 Flash accepts images and supports structured output; its documented thinking options are low/medium/high, not minimal. Proposed settings: low for reference analysis, medium for source-content selection; pin and record them. These differ from the image model's settings. [Google model page](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash)
+**OpenAI facts** (from the [model catalog](https://developers.openai.com/api/docs/models), checked 2026-09-26):
+- All current flagship models accept text and image input and are served through the Responses API.
+- `gpt-6-sol`: $2 per million input tokens, $10 per million output; reasoning effort from none to max.
+- `gpt-6-luna`: $0.10 / $0.50.
+- `gpt-6-astra`: $10 / $50. Not needed for these bounded tasks.
+- Structured output: see [OpenAI's structured output guide](https://developers.openai.com/api/docs/guides/structured-outputs).
 
-Flash Image supports image output and editing but not structured JSON output or function calling. Keep schema-based analysis/planning in the text/vision model. [Flash Image model page](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image)
+**Gemini image facts:**
+- Flash Image supports image output and editing, but not structured output or function calling. [Model page](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image)
+- The listed 1K image-output price is about $0.067; Lite's is $0.0336. There is no free tier for either model. [Pricing](https://ai.google.dev/gemini-api/docs/pricing)
+- The image guide favours Flash for reference consistency. [Image guide](https://ai.google.dev/gemini-api/docs/image-generation)
 
-The image guide favors Flash for reference consistency and warns that Lite is not optimized for multiple references or sequential editing; Lite's own page nevertheless describes local edit support. This is a suitability distinction, not a claim that Lite cannot edit. Use Flash initially, defer Lite comparison. The guide documents minimal/high thinking and linked edits through `previous_interaction_id`. [Image guide](https://ai.google.dev/gemini-api/docs/image-generation), [Lite model page](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-lite-image)
+**Other tools:**
+- PP-OCRv5 documentation still shows errors on artistic text. [PaddleOCR](https://www.paddleocr.ai/latest/en/version3.x/algorithm/PP-OCRv5/PP-OCRv5.html)
+- Neither Grounding DINO nor DINOv2 documentation establishes an identity threshold for our images. [Grounding DINO](https://huggingface.co/docs/transformers/en/model_doc/grounding-dino), [DINOv2](https://huggingface.co/docs/transformers/en/model_doc/dinov2)
 
-Anthropic lists vision support for its current models. Sonnet 5 costs $2/M input and $10/M output; Opus 5.5 costs $4/M input and $20/M output. That supports a modest calibration comparison, not an assertion that either is a validated judge. [Anthropic model overview](https://platform.claude.com/docs/en/models/overview)
+## 3. Spending
 
-Claude's current JSON-output field is `output_config.format`; strict tool output is another option. Validate the installed SDK/model combination with one approved pilot call. Schema adherence does not establish visual correctness. [Structured output documentation](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)
+Garmit asked for a credit recommendation: **about $10 Gemini + $10 OpenAI**. Purchase status is unconfirmed. Paid runs still need an explicit estimate and approval.
 
-PP-OCRv5 includes scene-text detection/recognition; its documented evaluations still show errors on artistic text. Do not interpret an OCR result as perfect transcription. [PaddleOCR documentation](https://www.paddleocr.ai/latest/en/version3.x/algorithm/PP-OCRv5/PP-OCRv5.html)
+Illustrative arithmetic, not a measured usage profile:
 
-Grounding DINO performs text-conditioned detection; DINOv2 supplies visual features. Neither documentation establishes a universally valid product-identity threshold for our images. [Grounding DINO documentation](https://huggingface.co/docs/transformers/en/model_doc/grounding-dino), [DINOv2 documentation](https://huggingface.co/docs/transformers/en/model_doc/dinov2)
-
-## 2. Distinct responsibilities, minimal generation
-
-Exact mode prepares copy in code. Extract mode makes one structured selection call; the result cites original source spans and preserves explicitly protected phrases. Both freeze TextPlan before rendering. There is no unconstrained copywriter or model that uses raw freeform prose as visual art direction.
-
-A cached reference analyzer can describe product facts. A deterministic registry resolves geography/season and a template compiles the final image prompt. Separate responsibilities do not require separate vendors or agents. Dedicated creative planning, multiple candidates and repair are deferred.
-
-The source-selection evaluator sees original input and chosen spans, and checks omitted qualifiers/negations/relevance independently. The rendering evaluator transcribes pixels without seeing expected text, then compares the transcript to TextPlan in code. A visual judge checks product/context evidence. Keep these prompts and evidence separable even when one judge model serves multiple roles.
-
-Google-to-Claude separation is a provisional independence choice, not proof of reliable judgments. Validate judges against human labels; do not choose them solely because they are larger or cross-family. Use a stronger model on a fixed calibration subset only when there are concrete failure cases to investigate.
-
-## 3. Initial spending proposal — not approved
-
-Google lists no free API generation tier for the two allowed image models. Flash's listed 1K image-output price is approximately $0.067; Lite's is $0.0336. Input, textual/thinking output and any extra services are additional. Enable Gemini billing before the smoke test. [Google pricing](https://ai.google.dev/gemini-api/docs/pricing)
-
-Revised baseline image-output arithmetic using the rounded Flash list figure:
-
-| Work | Image calls | Image-output subtotal |
+| Item | Calls | Estimate |
 |---|---:|---:|
-| Compatibility smoke | 1 | ~$0.07 |
-| Six development requests, one image each | 6 | ~$0.40 |
-| Twenty held-out requests, one image each | 20 | ~$1.34 |
-| Additional genuine failure fixtures / development reserve | ≤20 | ≤$1.34 |
-| Sum of these caps | ≤47 | ≤$3.15 |
+| Gemini images: smoke 1 + dev ~6 + held-out ~20 + reserve ≤20 | ≤47 | ≤ ~$3.15 image output, plus input/thinking |
+| OpenAI generation stages (~3k in / ~1k out each at `gpt-6-sol` rates ≈ $0.016) × ≤6 per request × ~27 requests | ≤ ~160 | ≤ ~$2.60 |
+| OpenAI evaluator judge calls, including repeats | ~200 | ~$3 |
 
-These are image-output subtotals, not hard billing caps; image inputs, reasoning/text outputs, selection and evaluation are extra. With generation simplified, prioritize the remaining budget for genuine evaluator observations, difficult cases and independent judge repeats. No image-repair or Lite-ablation spend is part of this baseline.
+Reasoning tokens bill as output and can dominate. Measure them in the probe and update these figures before bulk runs. Actual prices are recorded per call in the state store.
 
-For a judge-call illustration, 4,000 input tokens and 600 output tokens at Sonnet's listed rates cost $0.014; 200 such calls cost $2.80. This assumption is not a measured usage profile and excludes extra thinking/output usage. Reference/planner costs must be estimated from their actual selected settings and usage; do not assume free-tier quota or negligible thinking costs.
+## 4. Compatibility probe (after keys and a small approved spend)
 
-Propose an initial **$15 total application budget**, with an optional later increase only after seeing actual usage. This is a planning envelope, not a spend instruction. Start with a separately approved small smoke/pilot estimate, then update remaining-budget projections before any bulk run. Provider account funding minimums may differ.
-
-## 4. Compatibility probe the implementation agent must run
-
-After Garmit enables billing and authorizes the concrete pilot spend:
-
-1. Verify model IDs on the account and pin installed SDK versions.
-2. Extract one product profile with structured output; test empty/uncertain facts handling.
-3. Prepare one Exact request and one Extract TextPlan offline/with an approved selection call; prove protected coverage and selected-copy preservation.
-4. Generate one Flash square 1K image; measure returned dimensions, final block count, latency and usage.
-5. Keep edit/repair probing deferred; test OCR and source-to-copy observations on the baseline image/plan instead.
-6. Test one structured judge response once evaluator integration is ready.
-
-Do not call SDK snippets in the old context “tested” until these steps actually pass. Record model availability, endpoint/API surface, SDK versions and unsupported features. A rejected parameter is an integration failure, not a reason to replace the required model silently.
+1. Pin SDK versions (`google-genai`, `openai`). Verify that the model IDs are available on each account.
+2. One structured `gpt-6-sol` vision call on a reference image. Check schema adherence, token and reasoning usage, and how unknown fields are handled.
+3. One planner call and one reviewer call on a fixed request.
+4. One `gemini-3.1-flash-image` call at 1:1/1K. Check the returned dimensions, final image count, latency and usage.
+5. Record everything in the state store. A rejected parameter is an integration failure, not a reason to swap models silently.
 
 ## 5. Source-bank assertions not adopted as verified facts
 
-- The old non-square dimension table was not reproduced in the fetched current guide. Its exact values remain unverified here; v1 accepts square only and inspects real pixels.
-- The guide and model pages contain differently worded thinking descriptions. Use the documented, smoke-tested configuration; do not claim reasoning can be disabled on this basis.
-- Broad statements that “CPU is fine for 150 images,” that DINOv2 proves identity, or that one OCR package is best for these ads require measurements on the actual machine/data.
-- No automatic superiority claim is made for cross-family judges. Independent families reduce one possible source of correlation; human-labelled calibration is still required.
-- The original literature/prior-art list was read but not exhaustively source-audited in this iteration. Do not reuse its precise empirical claims or citations in a final submission without opening and checking the original papers.
-
-All primary-source links above were opened during this iteration. Model/pricing facts should be rechecked if implementation moves beyond the event date.
+- The old non-square dimension table is unverified here. v1 accepts square only and inspects real pixels.
+- "CPU is fine for 150 images", "DINOv2 proves identity" and "OCR package X is best for these ads" need measurement.
+- Cross-family judging reduces one possible source of bias. It does not validate a judge; human-labelled calibration does.
+- The historical prior-art list was not fully source-audited. Reopen the original papers before citing them.

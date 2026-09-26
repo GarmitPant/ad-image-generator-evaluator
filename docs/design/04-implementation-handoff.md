@@ -1,53 +1,88 @@
-# Implementation handoff — evaluation first
+# Implementation handoff
 
-Version 0.2 · 2026-09-26
+Version 0.3 · 2026-09-26 · Generation implemented first; evaluator remains the main judged deliverable
 
 ## 1. Mission
 
-Implement in this repository. Read AGENTS.md and document 05 first. The primary engineering deliverable is a defensible automated evaluator, not an elaborate ad-generation architecture. Garmit confirmed explicit Exact/Extract text policies, with optional protected phrases. Freeform text supplies ad content, not visual style.
+Implement in this repository. Read AGENTS.md, then documents 01 (generation), 06 (state store) and 05 (text contract and evaluator).
 
-Latest specification authority: 05 defines text/evaluation; 01 defines minimal generation; 02 gives provisional model choices. Historical context contains obsolete whole-input-verbatim and generation-first defaults. Do not copy those back into code.
+Garmit confirmed on 2026-09-26:
+- **Order:** build the generation pipeline first, then the evaluator.
+- **Planning:** an LLM creative planner with general guardrails, not a registry per geography × season pair.
+- **State store:** a SQLite state store.
+- **Providers:** OpenAI for LLM stages, Google Gemini for images. No Anthropic code.
+- **Keys:** placeholders only in the repository.
+
+Freeform text is content, not visual direction. Historical `docs/context/` defaults (whole-input verbatim, best-of-N loop) are obsolete.
+
+Progress checkpoints are kept in [docs/implementation-status.md](../implementation-status.md). Update it, and commit, at the end of every ticket.
 
 ## 2. Ticket order
 
-| Ticket | Deliverable | Exit evidence |
+| Ticket | Deliverable | Exit evidence (offline unless marked live) |
 |---|---|---|
-| E0 | Contracts, rubric skeleton and fixture manifest | Exact/Extract schema tests; separate selection/render/product/context verdicts |
-| G0 | Functional one-image generator | One allowed-model image, final pixels ≤1024, immutable input/TextPlan/image manifest |
-| E1 | Source→copy checks and render OCR/alignment | Protected coverage, span integrity, omission semantics, spatial one-to-one matching, exact/CER/WER observations |
-| E2 | Product/context evidence modules | Real observed evidence, documented model limitations, unknown handling and code-based composition |
-| E3 | Human-labelled dev examples and threshold freeze | Criteria and tuning splits recorded before held-out evaluation |
-| E4 | About twenty held-out pipeline images plus targeted negatives | Actual recorded observations, pass/fail/unknown labels and offline regression tests |
-| E5 | Report and disclosure | Confusion counts, abstention/coverage, separate text-stage metrics, failure analysis and clean-clone replay |
-| Optional | Generation repair, best-of-N, enrichment ablation, UI | Only after E0–E5; separately bounded costs |
+| G0 | Scaffold: `pyproject.toml` (uv), package layout, `config/pipeline.toml`, `.env.example` placeholders, README setup | `pytest` runs green on an empty suite from a clean clone with no keys |
+| G1 | State store: schema, migrations, repository API, `adgen state init/show`, run lock, event log | Transition, resume/fingerprint, dispatched→unknown, budget-block and no-secret tests |
+| G2 | Contracts: AdRequest, `Geography`/`Season` enums, country table, band × season table, TextInput/SourceContract/TextPlan, ProductProfile, ResolvedContext, CreativePlan, GuardrailReview | Schema tests, hemisphere/month tests, enum-table completeness test |
+| G3 | S1 intake + S4 context resolution | Decode/limits/rendition/hash tests on `data/products/`; resolver tests for all 8×4 pairs |
+| G4 | LLM provider interface: OpenAI client (structured output, no hidden retries), record/replay, cost estimation | Replay tests; missing recording fails without network |
+| G5 | S3 copy selection (Exact code, Extract call, validator) | Document 05 §3 validation cases via replay |
+| G6 | S2 product analysis (cached) | Cache reuse across runs; unknown handling via replay |
+| G7 | S5 planner + S6 guardrails (policy file, lexicons, reviewer, code decision, one replan, flag) | Roles/lengths-only input test (copy never in planner request); zone validation; approve / replan-approve / reject-then-generate paths |
+| G8 | S7 prompt compiler + S8 Gemini adapter + S9 output gate + orchestrator + `adgen generate` CLI | Deterministic prompt hash; response classification; ≤1024 gate; end-to-end replay run |
+| G9 (live) | Compatibility probe (document 02 §4) and first real run | Needs keys and an approved estimate; results recorded in the state store |
+| E0–E5 | Evaluator tickets (below) | As before |
+| Optional | Repair, best-of-N, ablations, UI, alternative LLM backend | Only after E5 |
 
-Aim to keep initial generation work to roughly one fifth of remaining engineering time; spend the rest on evaluation/data/reporting. This is a planning recommendation, not a claim about judges' numeric scoring weights. The earlier six-hour estimate is stale; check actual remaining time before setting deadlines. Do not burn the final report/test buffer on image polish.
+Evaluator tickets:
+- E0 contracts and rubric
+- E1 source→copy and render OCR/alignment
+- E2 product/context evidence
+- E3 dev labels and threshold freeze
+- E4 ~20 held-out images plus negatives
+- E5 report
 
-## 3. Minimal modules
+The evaluator reads lineage and `guardrail_status` from the state store.
+
+## 3. Module layout
 
 ```text
+config/pipeline.toml          # model IDs, efforts, timeouts, prices, template/policy versions
+policy/guardrails.yaml        # general guardrail rules + lexicons
 src/adgen/
-  contracts.py          # request, source contract, TextPlan, EvalRecord
-  assets.py             # decoding, normalization, hashes, artifact save
-  text_selection.py     # Exact in code; Extract model + structural validation
-  registry.py           # reviewed geography/season profiles
-  compiler.py           # fixed composition and literal selected copy
-  generation.py         # one allowed Gemini image call
-  store.py  budget.py   # manifests, resume, usage and reservations
-  eval/
-    source_fidelity.py  # source→plan checks and semantic observations
-    text_rendering.py   # blind OCR, spatial blocks, assignment, exact/CER/WER
-    product.py          # presence/identity/branding evidence
-    context.py          # atomic scene checklist
-    compose.py          # policy in code, unknown propagation
-    providers.py        # structured judge and record/replay
-    report.py           # metrics from labels + records, no invented summaries
-  cli.py                # generate, evaluate, replay, report
+  contracts/                  # pydantic models (request, text, context, plan, profile, review)
+  geo.py                      # Geography/Season enums, country table, band×season table
+  assets.py                   # decode, normalize, hash, rendition
+  state/                      # sqlite schema, migrations, repository, lock
+  llm/                        # provider interface, openai client, replay, pricing
+  stages/
+    intake.py  product_analysis.py  copy_selection.py  context_resolution.py
+    creative_planning.py  plan_guardrails.py  prompt_compilation.py
+    image_generation.py  output_gate.py
+  orchestrator.py             # deterministic stage runner over the state store
+  cli.py                      # generate, state init/show, (later) evaluate, report
+  eval/                       # evaluator (document 05)
+tests/
 ```
 
-Use one Python process and files. The evaluator accepts external fixtures and never invokes generation. Keep provider-boundary schemas and versions explicit. Do not add an orchestration framework just to express this sequence.
+One process and one SQLite file. No orchestration framework or agent runtime. The evaluator never invokes generation.
 
 ## 4. Acceptance cases
+
+### Generation pipeline
+
+- Invalid geography or season values are rejected by the enums. Every enum value has a country-table row (completeness test).
+- AU/BR seasons resolve to southern-hemisphere months without renaming the season.
+- The planner request contains block IDs, roles and lengths, and **never** any TextPlan string or source text. The test asserts on the recorded request.
+- A CreativePlan with overlapping zones, a missing or unknown block_id, over-length fields or quoted display text fails code checks.
+- Guardrail paths:
+  - approved on first plan;
+  - rejected then approved after replan;
+  - rejected twice → generation proceeds and `guardrail_status=rejected_after_replan` is recorded;
+  - schema-invalid twice → run `blocked`.
+- Reviewer evidence quotes that are absent from the plan are treated as invalid review output.
+- The compiled prompt contains no raw source text and no planner rationale. Its hash is deterministic.
+- Keys never appear in the state store, recorded requests or artifacts.
 
 ### Text contract and extraction
 
@@ -99,6 +134,6 @@ Commit curated test images/manifests/labels and recorded observations with right
 
 Reports must include dimensional confusion counts, false accepts/rejects, abstention/coverage, undefined metric cases, actual latency/cost, threshold sources and repeat instability. Replay verifies regression; it does not prove a learned judge is correct. No target percentages are achieved by construction.
 
-## 6. Updated initial implementation prompt
+## 6. Initial implementation prompt
 
-> Read AGENTS.md and docs/design/05, 01 and 04. Implement E0 and the minimal G0 path, then prioritize evaluator E1–E5. Use explicit Exact/Extract modes and source-span-backed TextPlans; freeform text is copy, not visual direction. Evaluate selection fidelity separately from rendered text fidelity. Keep generation to one allowed Gemini image call per request. Use real labelled fixtures plus offline record/replay and code-composed verdicts. Do not implement repair, best-of-N, aesthetic planning or UI yet. Before paid calls show a concrete estimate and use Garmit's approved budget. Record implementation decisions and actual validation in the collaboration log.
+> Read AGENTS.md and docs/design/01, 06, 05 and 04. Implement tickets G0–G8 in order, updating docs/implementation-status.md and committing at each checkpoint. Use OpenAI for LLM stages and Gemini for image generation only; write no Anthropic code. The planner sees text roles and lengths only. Guardrails allow one replan, then generate and flag. Every stage goes through the SQLite state store. Tests run offline with record/replay. No paid calls without a concrete approved estimate. Then implement evaluator tickets E0–E5.

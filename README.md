@@ -2,11 +2,15 @@
 
 G2 hackathon project: generate contextual display ads and demonstrate a rigorous automated evaluator for content, product identity, scene context and rendered text.
 
-**This repository holds specifications and implementation. Current status: specs only; no measured evaluation results yet.** Another coding agent implements here; this collaboration develops and reviews the design.
+**This repository holds specifications and implementation. Current status: design v0.3; implementation starting with the generation pipeline. No measured results yet.** See [implementation status](docs/implementation-status.md).
 
 ## Priority
 
-The hackathon emphasizes engineering around evaluation methods, criteria, automated tests and trustworthy evidence. Generation needs to function. Start with one generated image per request; defer aesthetic planning, best-of-N, repairs and UI until evaluator validation is complete.
+The hackathon emphasizes engineering around evaluation methods, criteria, automated tests and trustworthy evidence. Implementation builds the generation pipeline first (LLM planner with general guardrails, one Gemini image per request, SQLite state store), then the evaluator. Best-of-N, repairs and UI are deferred.
+
+## Providers and keys
+
+OpenAI powers the LLM stages; Google Gemini generates images. Copy `.env.example` to `.env` and add your own `GEMINI_API_KEY` and `OPENAI_API_KEY`. No keys are committed. Offline tests need no keys.
 
 ## Text input
 
@@ -19,11 +23,14 @@ Evaluate both **source → selected copy** (relevance, coverage, meaning and pro
 
 ## Read in order
 
-1. [Evaluation and text contract](docs/design/05-evaluation-and-text-contract.md)
-2. [Functional generation baseline](docs/design/01-generation-pipeline.md)
-3. [Implementation handoff](docs/design/04-implementation-handoff.md)
-4. [Model decisions and sources](docs/design/02-model-decisions.md)
-5. [Challenges and decisions](docs/design/03-challenges-and-decisions.md)
+1. [Generation pipeline](docs/design/01-generation-pipeline.md)
+2. [State store](docs/design/06-state-store.md)
+3. [Evaluation and text contract](docs/design/05-evaluation-and-text-contract.md)
+4. [Implementation handoff](docs/design/04-implementation-handoff.md)
+5. [Model decisions and sources](docs/design/02-model-decisions.md)
+6. [Challenges and decisions](docs/design/03-challenges-and-decisions.md)
+
+Reference product photos and their provenance: [data/products](data/products/README.md).
 
 Read [AGENTS.md](AGENTS.md) before implementation. Record decisions in [docs/decisions.md](docs/decisions.md) and actual agent work in [docs/agent-collaboration.md](docs/agent-collaboration.md).
 
