@@ -150,7 +150,10 @@ def group_lines(lines, cfg):
             (ax0, ay0, ax1, ay1), (bx0, by0, bx1, by1) = a["box"], b["box"]
             gap = max(by0 - ay1, ay0 - by1)
             height = min(ay1 - ay0, by1 - by0)
-            if 0 <= gap <= cfg.line_merge_gap * height and min(ax1, bx1) > max(ax0, bx0):
+            # Tall display type often yields slightly overlapping line boxes (negative gap).
+            if -0.5 * height <= gap <= cfg.line_merge_gap * height and min(ax1, bx1) > max(
+                ax0, bx0
+            ):
                 parent[find(j)] = find(i)
     groups = {}
     for i in range(len(lines)):
@@ -265,13 +268,26 @@ def rendering(text_plan, ocr_lines, product_boxes, cfg):
             "fail"
             if "fail" in block_verdicts
             else ("unknown" if "unknown" in block_verdicts else "pass"),
-            "every selected block rendered exactly once, matched one-to-one",
+            "; ".join(
+                f"'{b['expected']}' not found"
+                if b["observed"] is None
+                else f"expected '{b['expected']}', read '{b['observed']}' ({b['reason']})"
+                for b in blocks
+                if b["verdict"] != "pass"
+            )
+            or f"all {len(blocks)} copy block(s) found exactly once",
             blocks=blocks,
         ),
         check(
             "R-EXTRA",
             "fail" if extra_fail else ("unknown" if extra_unsure else "pass"),
-            ("duplicated copy: " + "; ".join(duplicates)) if duplicates else "no unplanned ad text",
+            ("duplicated copy: " + "; ".join(duplicates))
+            if duplicates
+            else ("unplanned text: " + "; ".join(ln["text"] for ln in extra_fail))
+            if extra_fail
+            else ("uncertain extra text: " + "; ".join(ln["text"] for ln in extra_unsure))
+            if extra_unsure
+            else "no unplanned ad text",
             extra=[ln["text"] for ln in extra_fail],
             uncertain=[ln["text"] for ln in extra_unsure],
             duplicates=duplicates,

@@ -123,3 +123,31 @@ def test_semantic_failure_needs_a_real_source_quote():
     verdicts = {c["id"]: c["verdict"] for c in selection_semantic(contract, judged)}
     assert verdicts == {"SEL-MEANING": "fail", "SEL-OMISSION": "unknown", "SEL-RELEVANCE": "pass"}
     assert {c["verdict"] for c in selection_semantic(contract, None)} == {"unknown"}
+
+
+PILOT = json.loads((ROOT / "tests/fixtures/pilot_false_rejects.json").read_text())
+
+
+@pytest.mark.parametrize("case", PILOT["cases"], ids=lambda c: c["case"])
+def test_pilot_false_rejects_now_pass(case, cfg):
+    """Correct live ads that evaluator/2 rejected: overlapping line boxes, a 3-line block wrapped
+    onto 4 lines, and bottle-label text that sat in a raw (uncounted) detection box."""
+    plan = {"blocks": [{"block_id": f"t{i}", "text": t} for i, t in enumerate(case["blocks"], 1)]}
+    boxes = [d["box"] for d in case["raw_detections"]]
+    checks, score, _ = rendering(plan, copy.deepcopy(case["ocr_lines"]), boxes, cfg)
+    verdicts = {c["id"]: c["verdict"] for c in checks}
+    assert verdicts["R-BLOCKS"] == "pass" and verdicts["R-EXTRA"] == "pass", [
+        c["reason"] for c in checks
+    ]
+    assert score == 1.0
+
+
+def test_failure_reasons_describe_the_actual_problem(plan, cfg):
+    def swap(lines):
+        for ln in lines:
+            ln["text"] = ln["text"].replace("30 days", "31 days")
+
+    checks, _, _ = render("c1", plan, cfg, swap)
+    assert "read 'Free returns within 31 days" in checks["R-BLOCKS"]["reason"]
+    checks2, _, _ = render("c2", plan, cfg)
+    assert checks2["R-EXTRA"]["reason"] == "duplicated copy: Built for bright days."

@@ -1,0 +1,343 @@
+{
+ "source": "Recorded 2026-09-26 in the batch-v1 pilot (live Gemini images, PP-OCRv6, grounding-dino-tiny). All three were correct ads that evaluator/2 falsely rejected.",
+ "cases": [
+  {
+   "case": "b1-01-heineken-in-summer-exact c1",
+   "blocks": [
+    "Heineken Original\nMade for monsoon evenings.\nEnjoy responsibly."
+   ],
+   "ocr_lines": [
+    {
+     "box": [
+      500,
+      226,
+      528,
+      323
+     ],
+     "score": 0.7591,
+     "text": "eke"
+    },
+    {
+     "box": [
+      426,
+      443,
+      604,
+      547
+     ],
+     "score": 0.6621,
+     "text": "MIWNEKEN ORIGWET"
+    },
+    {
+     "box": [
+      534,
+      533,
+      545,
+      540
+     ],
+     "score": 0.9029,
+     "text": "157"
+    },
+    {
+     "box": [
+      433,
+      552,
+      597,
+      591
+     ],
+     "score": 1.0,
+     "text": "Heineken"
+    },
+    {
+     "box": [
+      480,
+      599,
+      554,
+      611
+     ],
+     "score": 0.8276,
+     "text": "KIDLATE POS RAR LEN"
+    },
+    {
+     "box": [
+      444,
+      611,
+      459,
+      621
+     ],
+     "score": 0.6914,
+     "text": "NELL"
+    },
+    {
+     "box": [
+      573,
+      609,
+      585,
+      618
+     ],
+     "score": 0.6435,
+     "text": "11"
+    },
+    {
+     "box": [
+      311,
+      833,
+      710,
+      890
+     ],
+     "score": 1.0,
+     "text": "Heineken Original"
+    },
+    {
+     "box": [
+      201,
+      886,
+      817,
+      943
+     ],
+     "score": 1.0,
+     "text": "Made for monsoon evenings."
+    },
+    {
+     "box": [
+      313,
+      941,
+      708,
+      999
+     ],
+     "score": 1.0,
+     "text": "Enjoy responsibly."
+    },
+    {
+     "box": [
+      414,
+      590,
+      610,
+      726
+     ],
+     "score": 0.4444,
+     "text": "TAIIUN NAATA"
+    }
+   ],
+   "raw_detections": [
+    {
+     "box": [
+      418,
+      103,
+      610,
+      803
+     ],
+     "score": 0.4948
+    }
+   ]
+  },
+  {
+   "case": "b1-01-heineken-in-summer-exact c3",
+   "blocks": [
+    "Heineken Original\nMade for monsoon evenings.\nEnjoy responsibly."
+   ],
+   "ocr_lines": [
+    {
+     "box": [
+      30,
+      421,
+      306,
+      459
+     ],
+     "score": 1.0,
+     "text": "Heineken Original"
+    },
+    {
+     "box": [
+      31,
+      473,
+      314,
+      507
+     ],
+     "score": 0.9964,
+     "text": "Made for monsoon"
+    },
+    {
+     "box": [
+      28,
+      509,
+      177,
+      553
+     ],
+     "score": 1.0,
+     "text": "evenings."
+    },
+    {
+     "box": [
+      29,
+      560,
+      300,
+      605
+     ],
+     "score": 1.0,
+     "text": "Enjoy responsibly."
+    },
+    {
+     "box": [
+      594,
+      518,
+      767,
+      628
+     ],
+     "score": 0.655,
+     "text": "UINKEN ORIGOWET"
+    },
+    {
+     "box": [
+      636,
+      525,
+      684,
+      547
+     ],
+     "score": 0.4794,
+     "text": "-D"
+    },
+    {
+     "box": [
+      680,
+      525,
+      720,
+      547
+     ],
+     "score": 0.8879,
+     "text": "AOLLARD"
+    },
+    {
+     "box": [
+      604,
+      622,
+      756,
+      668
+     ],
+     "score": 1.0,
+     "text": "Heineken"
+    },
+    {
+     "box": [
+      596,
+      674,
+      764,
+      775
+     ],
+     "score": 0.5044,
+     "text": "SUTEM ALT LAS"
+    },
+    {
+     "box": [
+      638,
+      750,
+      680,
+      769
+     ],
+     "score": 0.4484,
+     "text": "LLLG"
+    }
+   ],
+   "raw_detections": [
+    {
+     "box": [
+      595,
+      204,
+      767,
+      852
+     ],
+     "score": 0.643
+    },
+    {
+     "box": [
+      596,
+      204,
+      767,
+      852
+     ],
+     "score": 0.3703
+    }
+   ]
+  },
+  {
+   "case": "b1-02-sunglasses-au-summer-extract c3",
+   "blocks": [
+    "classic black frames",
+    "Polarized lenses. Built for bright days.",
+    "Free returns within 30 days on all orders placed online."
+   ],
+   "ocr_lines": [
+    {
+     "box": [
+      60,
+      56,
+      738,
+      166
+     ],
+     "score": 1.0,
+     "text": "classic black"
+    },
+    {
+     "box": [
+      61,
+      161,
+      442,
+      266
+     ],
+     "score": 1.0,
+     "text": "frames"
+    },
+    {
+     "box": [
+      67,
+      356,
+      412,
+      403
+     ],
+     "score": 0.9995,
+     "text": "Polarized lenses."
+    },
+    {
+     "box": [
+      66,
+      407,
+      474,
+      458
+     ],
+     "score": 1.0,
+     "text": "Built for bright days."
+    },
+    {
+     "box": [
+      62,
+      959,
+      956,
+      1004
+     ],
+     "score": 0.9958,
+     "text": "Free returns within 30 days on all orders placed online."
+    },
+    {
+     "box": [
+      826,
+      563,
+      857,
+      589
+     ],
+     "score": 0.6776,
+     "text": "Byyfon"
+    }
+   ],
+   "raw_detections": [
+    {
+     "box": [
+      384,
+      518,
+      968,
+      707
+     ],
+     "score": 0.9659
+    }
+   ]
+  }
+ ]
+}

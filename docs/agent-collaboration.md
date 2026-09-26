@@ -94,3 +94,11 @@
 - Agent disclosure: the Jeep images had already been committed unreviewed in 3acd277 by the agent's `git add -A`; they were then inspected (Unsplash, 12–25 MP, no sensitive content) and their provenance recorded. The agent now stages explicit paths.
 - Work performed: provenance; four Jeep requests (2-door jeep-2 kept separate from the 4-door references); removed labels CSV, labelling sheet, template and agreement code; rewrote the report output (plain-language names, per-request ranking and reasons, evidence cards, readable CSV); P-SIM reason now shows the similarity value.
 - Validation: all 20 requests valid offline; 118 tests; report rendered and inspected on the dry-evaluated live Ray-Ban run.
+
+## 2026-09-26 — Pilot findings and evaluator/3 (Claude Code)
+
+- Human action: Garmit ran the 2-request pilot (both evaluated; winners approved).
+- Pilot review found 3 of 6 candidates falsely rejected by the evaluator (the ads were correct): overlapping OCR line boxes were not merged; a 3-line Exact block wrapped onto 4 lines exceeded the 3-line segment cap; bottle-label text sat in a detection box scored 0.49, below the 0.5 count threshold, so it counted as extra ad copy. Failure reasons also printed the check's fixed description instead of the actual problem.
+- Fixes (evaluator/3): allow slightly overlapping line boxes; blocks may span up to 6 lines; label text is excluded using all raw detections; the detector prompt drops parentheticals ("beer (alcoholic lager)" → "beer"); count threshold 0.4 with overlapping boxes de-duplicated; outcome-specific reasons. Evaluation stages are now versioned (`evaluation@evaluator/3`), so existing runs are re-scored with `adgen evaluate` without regenerating.
+- Validation: 123 tests, including the three genuine pilot false rejects recorded as fixtures (`tests/fixtures/pilot_false_rejects.json`).
+- Methodology note: this change was made after inspecting pilot results, so the two pilot requests are development data for the evaluator, not held out; the report must say so.

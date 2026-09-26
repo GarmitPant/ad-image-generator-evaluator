@@ -120,9 +120,16 @@ def collect(state, run_ids=None, include_synthetic=False):
             gen_stages = [
                 s
                 for s in snap["stages"]
-                if s["candidate_index"] == i and s["stage"] != "evaluation"
+                if s["candidate_index"] == i and not s["stage"].startswith("evaluation")
             ]
-            eval_stage = stage.get(("evaluation", i))
+            eval_stages = [
+                s
+                for s in snap["stages"]
+                if s["candidate_index"] == i
+                and s["stage"].startswith("evaluation")
+                and s["status"] == "succeeded"
+            ]
+            eval_stage = max(eval_stages, key=lambda s: s["ended_at"]) if eval_stages else None
             rows.append(
                 {
                     "request_id": request["request_id"],

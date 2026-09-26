@@ -1,5 +1,6 @@
 """Evaluates one candidate from recorded evidence. Evidence failures become unknown, never pass."""
 
+import re
 import time
 
 from ..state import failure
@@ -20,13 +21,26 @@ VERSION = "eval-record/1"
 
 
 def detector_label(profile):
-    return profile["category"].strip().lower().rstrip(".") + "."
+    """Short noun phrase: parentheticals such as '(alcoholic lager)' weaken grounding."""
+    return re.sub(r"\(.*?\)", "", profile["category"]).strip().lower().rstrip(".") + "."
+
+
+def _iou(a, b):
+    ix = max(0, min(a[2], b[2]) - max(a[0], b[0]))
+    iy = max(0, min(a[3], b[3]) - max(a[1], b[1]))
+    union = (a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - ix * iy
+    return ix * iy / union if union else 0.0
 
 
 def _counted(boxes, cfg):
-    return sorted(
-        (b for b in boxes if b["score"] >= cfg.detector_count_threshold), key=lambda b: -b["score"]
-    )
+    """Confident, de-duplicated product instances (overlapping boxes of one object count once)."""
+    kept = []
+    for b in sorted(boxes, key=lambda b: -b["score"]):
+        if b["score"] >= cfg.detector_count_threshold and all(
+            _iou(b["box"], k["box"]) <= 0.5 for k in kept
+        ):
+            kept.append(b)
+    return kept
 
 
 def _cosine(a, b):
@@ -141,9 +155,9 @@ class Evaluator:
                 "diagnostics": {},
             }
         else:
-            r_checks, r_score, r_diag = rendering(
-                text_plan, ocr["lines"], [b["box"] for b in boxes], cfg
-            )
+            # Exclude product-label text using every raw detection, not only counted instances.
+            raw_boxes = [b["box"] for b in detected["boxes"]] if detected else []
+            r_checks, r_score, r_diag = rendering(text_plan, ocr["lines"], raw_boxes, cfg)
             text_rendering = {**dimension(r_checks, r_score), "diagnostics": r_diag}
 
         # Identity similarity (diagnostic until calibrated): best match over reference crops.
@@ -201,7 +215,7 @@ class Evaluator:
             check(
                 "P1",
                 p1,
-                "exactly one product; detector and judge must agree",
+                f"judge counted {judge_count}, detector counted {detector_count}; exactly one required and both must agree",
                 judge_count=judge_count,
                 detector_count=detector_count,
                 boxes=boxes,

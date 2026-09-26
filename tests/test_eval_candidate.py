@@ -139,3 +139,15 @@ def test_region_recognisability_is_reported_but_never_decisive(state):
     region = [c for c in record["context"]["checks"] if c["id"] == "C-REGION"][0]
     assert region["verdict"] == "fail" and region["required"] is False
     assert record["context"]["verdict"] == "pass" and record["overall_verdict"] == "pass"
+
+
+def test_detector_prompt_and_duplicate_boxes():
+    from adgen.eval.evaluator import _counted, detector_label
+
+    assert detector_label({"category": "Beer (alcoholic lager)"}) == "beer."
+    cfg = EvaluatorConfig.load(ROOT / "config/evaluator.toml")
+    boxes = [
+        {"box": [595, 204, 767, 852], "score": 0.64},
+        {"box": [596, 204, 767, 852], "score": 0.45},
+    ]
+    assert len(_counted(boxes, cfg)) == 1  # one bottle, two near-identical boxes

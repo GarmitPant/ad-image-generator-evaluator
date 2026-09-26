@@ -129,3 +129,12 @@ Detailed differences and operational limits: [generation runbook](generation-run
 | Add Jeep references; replace requests 07, 09, 13 and 18 with Jeep requests (same countries and seasons). Never combine 2-door jeep-2 with 4-door jeep-1/jeep-3; jeep-2 (snowy) is used in a summer request as a season-leakage probe | Confirmed by Garmit (new images); variant handling is an agent decision | Heineken GB, sunglasses AE, Modelo AU, bottle US requests |
 | Drop human labelling and the label-agreement report | Confirmed by Garmit: short on time. The report states that evaluator accuracy is not measured against humans | Batch v1 steps 6–7 (blind labels, credibility check) |
 | Report output rewritten for people: plain-language check names, per-request ranking with reasons, per-candidate evidence cards (`evidence/*.md`), readable CSV | Confirmed by Garmit | Machine-oriented CSV/JSON only |
+
+
+## 2026-09-26 — Evaluator/3 after pilot (Claude Code; for Garmit's review)
+
+| Decision | Reason |
+|---|---|
+| Fix line merging, block wrap, label exclusion, detector prompt and count threshold (0.4 plus IoU de-duplication) | Three genuine false rejects in the pilot |
+| Version the evaluation stages and re-score existing runs with `adgen evaluate`, instead of regenerating | Generation was correct; only scoring changed. Saves image cost |
+| Treat pilot requests 01 and 02 as evaluator development data | The evaluator was changed after seeing their results |

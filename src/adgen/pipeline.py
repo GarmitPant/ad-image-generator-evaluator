@@ -231,7 +231,7 @@ class Pipeline:
             "candidate_manifest",
         )
         summary, _ = self.stage(
-            "export_evaluated" if self.evaluator else "export",
+            self._eval_stage("export_evaluated") if self.evaluator else "export",
             {
                 "candidates": summary_input,
                 "request": request_sha,
@@ -340,12 +340,12 @@ class Pipeline:
         state, evaluator = self.state, self.evaluator
         config_sha = state.artifact(canonical(evaluator.config.model_dump()), "evaluator_config")
         selection, selection_sha = self.stage(
-            "selection_evaluation",
+            self._eval_stage("selection_evaluation"),
             {"source_contract": contract_sha, "text": text_sha, "evaluator_config": config_sha},
             lambda exec_id: evaluator.selection(exec_id, contract, text_plan),
         )
         references, references_sha = self.stage(
-            "reference_evidence",
+            self._eval_stage("reference_evidence"),
             {
                 **{f"reference_{i}": sha for i, sha in enumerate(reference_hashes)},
                 "profile": profile_sha,
@@ -362,12 +362,16 @@ class Pipeline:
             "references_sha": references_sha,
         }
 
+    def _eval_stage(self, name):
+        """Evaluation stages are versioned so a newer evaluator can re-score a run without regenerating."""
+        return f"{name}@{self.evaluator.config.version}"
+
     def _evaluate_candidate(self, index, shared, image_sha, guardrail_sha, guardrail_status):
         """An evaluation crash never discards a generated image; it is recorded as evaluation_failed."""
         ev = shared.evaluation
         try:
             record, record_sha = self.stage(
-                "evaluation",
+                self._eval_stage("evaluation"),
                 {
                     "image": image_sha,
                     "text": shared.text_sha,
@@ -555,8 +559,8 @@ class Pipeline:
 def export_run(state, run_id, destination=None, *, summary=None):
     if summary is None:
         row = state.one(
-            "SELECT exec_id FROM stage_execution WHERE run_id=? AND stage IN ('export','export_evaluated') "
-            "AND status='succeeded' ORDER BY stage='export_evaluated' DESC, ended_at DESC LIMIT 1",
+            "SELECT exec_id FROM stage_execution WHERE run_id=? AND (stage='export' OR stage LIKE 'export_evaluated%') "
+            "AND status='succeeded' ORDER BY stage LIKE 'export_evaluated%' DESC, ended_at DESC LIMIT 1",
             (run_id,),
         )
         if not row:
