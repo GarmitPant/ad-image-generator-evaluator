@@ -1,6 +1,6 @@
 # Ad generation with evidence-based evaluation
 
-**Design draft · reviewed against commit `441eff7` · batch results pending**
+**Design and batch findings · generation/2 · evaluator/3**
 
 This document explains the engineering choices. A deliberate architectural decision is to make execution state and evidence traceable: every candidate and judgment should be inspectable through the inputs, model calls and artifacts that produced it. The [evaluation report](submission/report.md) supplies measured results, the [contact sheet](submission/contact-sheet.html) shows the images, and the [README](README.md) covers setup and commands.
 
@@ -94,13 +94,31 @@ Provider dispatch is committed before sending. If a call's outcome is uncertain 
 
 Traceability makes decisions explainable and experiments repeatable on recorded evidence. It does **not** make the evaluator's judgments correct or guarantee identical images from a fresh generation call.
 
-## 7. Results to attach after the batch
+## 7. Batch results and what they demonstrate
 
-The current plan is **9 requests × 3 candidates = 27 images**; report actual attempts and completions, not the planned count alone. Derive coverage from the requests actually run—the older 20-request coverage table is stale.
+The saved submission contains **9 live requests and 27 generated, evaluated images**, with no synthetic runs. It covers all eight countries and four seasons, five Exact and four Extract requests, and one-, two- and three-reference inputs. All candidates used `generation/2` and `evaluator/3`; all 27 evaluations recorded execution status `ok`.
 
-Keep this section short: attempted/generated/evaluated counts; PASS/FAIL/UNSURE by dimension; approved winners; estimated cost and latency; and three linked examples—a pass, a generation failure and an evaluator limitation. Link the full report rather than duplicating its candidate tables.
+| Automated outcome | PASS | FAIL | UNSURE |
+|---|---:|---:|---:|
+| Text selection | 27 | 0 | 0 |
+| Text rendering | 25 | 2 | 0 |
+| Product | 22 | 1 | 4 |
+| Context | 26 | 1 | 0 |
+| **Overall** | **20** | **3** | **4** |
 
-The two pilot requests informed evaluator changes and are development data, even after rescoring. Identify them separately. There are no human labels in the final batch, so report automated outcomes without calling them measured accuracy or a fully held-out benchmark. Confirm evaluator/config versions before aggregating results.
+**Eight of nine requests had an approved winner.** Country recognisability, a separate diagnostic, returned 23 PASS, 3 FAIL and 1 UNSURE. Text-selection results are shared across a request's candidates: 27 candidate-level passes do not represent 27 independent copy-selection tests.
+
+Three evidence-linked examples illustrate the design:
+
+- **An approved result:** [Australian sunglasses, candidate 2](submission/evidence/b1-02-sunglasses-au-summer-extract__db9d6da9-c2.md) passed every required check. Its evidence card connects the verdict to expected/read copy, product checks and scene judgments.
+- **A high score cannot erase a failure:** [German bottle, candidate 2](submission/evidence/b1-04-bottle-de-winter-extract__d897ef86-c2.md) scored **1.0**, but OCR reported unplanned `t1`, `t2`, `t3` text. The required extra-text check failed, so a passing candidate ranked above it despite its high product similarity. The score measures selected dimensions of quality; it is not an approval probability.
+- **Uncertainty is retained:** [US Jeep, candidate 1](submission/evidence/b1-18-jeep-us-summer-exact__05359b90-c1.md) was selected but **not approved**, because the judge did not resolve the distinctive-components check. All three candidates for that request remained UNSURE; selection did not manufacture a passing result.
+
+The median recorded generation-stage time was **34.01 seconds per candidate**, and evaluation time was **22.54 seconds**; these are not full-request wall-clock times. Recorded cost estimates totalled **$2.874**: $2.349 for candidate generation, $0.445 for evaluation-judge calls and $0.080 for shared request-level calls across the batch. These are token-based estimates, not provider invoices or a valuation of local compute.
+
+**Methodological boundary:** requests 01 and 02 were used to refine the evaluator. Their six rescored candidates all passed; the remaining 21 produced 14 PASS, 3 FAIL and 4 UNSURE. The combined set is not a fully held-out benchmark. There are no human labels, so these counts describe automated judgments, not measured evaluator accuracy or verified image correctness.
+
+Figures were checked against [results.json](submission/results.json) and [requests.jsonl](submission/requests.jsonl). The [full report](submission/report.md) and [contact sheet](submission/contact-sheet.html) retain every candidate and its ranking; the linked evidence cards make individual decisions inspectable.
 
 ## 8. Limitations and next steps
 
