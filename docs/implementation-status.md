@@ -22,7 +22,7 @@ Implementation and operating details: [generation runbook](generation-runbook.md
 
 ## Batch v1 (active — resume here)
 
-Regional-style change implemented (policy `guardrails/2`, prompts `generation/2`, evaluator `evaluator/2` with diagnostic C-REGION; blind labeling sheet + labels template in `adgen report`). Runs from before this change are not used. Plan and exact commands: [batch-v1-plan.md](batch-v1-plan.md). Jeep requests added (07, 09, 13, 18). Human labelling dropped for time; `adgen report` output rewritten for human readers (plain-language check names, per-request ranking tables, per-candidate evidence cards). Next: pilot (`scripts/run-batch.sh data/requests/batch-v1 2`), freeze, full batch, `adgen report --out submission`, then the design/implementation write-up.
+Regional-style change implemented (policy `guardrails/2`, prompts `generation/2`, evaluator `evaluator/2` with diagnostic C-REGION; blind labeling sheet + labels template in `adgen report`). Runs from before this change are not used. Plan and exact commands: [batch-v1-plan.md](batch-v1-plan.md). Jeep requests added (07, 09, 13, 18). Human labelling dropped for time; `adgen report` output rewritten for human readers (plain-language check names, per-request ranking tables, per-candidate evidence cards). Pilot done and re-scored (evaluator/3, ranking/2). Batch reduced to 9 requests / 27 images for time. Next: `scripts/run-batch.sh data/requests/batch-v1` (7 remaining), `adgen report --out submission`, then the write-up.
 
 ## Evaluator build plan (complete)
 

@@ -1,6 +1,6 @@
 # Batch v1: 20 ads, evaluation report and human-label check
 
-Status: ready to run. Requests are in [`data/requests/batch-v1/`](../data/requests/batch-v1/): 20 requests × 3 candidates = 60 evaluated images and 20 ranked winners. **Human labelling was dropped for time (2026-09-26); the deliverable is the automated evaluation report.** Only runs recorded **after** the regional-style change (policy `guardrails/2`, prompts `generation/2`, evaluator `evaluator/2`) count.
+Status: reduced for time (2026-09-26): **9 requests × 3 candidates = 27 evaluated images** (pilot 01–02 plus 03, 04, 06, 07, 12, 18, 20). The other 11 requests are parked in `data/requests/batch-v1-unused/`. Requests are in [`data/requests/batch-v1/`](../data/requests/batch-v1/). **Human labelling was dropped for time (2026-09-26); the deliverable is the automated evaluation report.** Only runs recorded **after** the regional-style change (policy `guardrails/2`, prompts `generation/2`, evaluator `evaluator/2`) count.
 
 ## Coverage (by design)
 
