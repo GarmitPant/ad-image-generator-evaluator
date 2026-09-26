@@ -81,6 +81,30 @@ class SyntheticProvider:
             }
         elif purpose == "review":
             result = {"verdict": "approve", "reasons": []}
+        elif purpose == "judge_selection":
+            result = {
+                "answers": [
+                    {
+                        "question_id": q,
+                        "answer": "no" if q == "SEL-OMISSION" else "yes",
+                        "evidence_quote": "",
+                    }
+                    for q in ("SEL-MEANING", "SEL-OMISSION", "SEL-RELEVANCE")
+                ]
+            }
+        elif purpose == "judge_visual":
+            questions = json.loads(invocation["prompt"].split("\nQUESTIONS:\n", 1)[1])
+            result = {
+                "product_count": 1,
+                "answers": [
+                    {
+                        "question_id": q,
+                        "answer": "no" if q.startswith("GR-") or q == "C-CONTRA" else "yes",
+                        "evidence": "synthetic fixture",
+                    }
+                    for q in questions
+                ],
+            }
         elif purpose == "image":
             image = Image.new("RGB", (1024, 1024), "#e5f4f1")
             draw = ImageDraw.Draw(image)
@@ -121,6 +145,11 @@ class SyntheticProvider:
         return response
 
 
+DEMO_TEXT = "Stay refreshed"
+# Synthetic OCR/detection for the demo image: control flow only, not evidence of quality.
+DEMO_VISION = {"ocr_lines": [(DEMO_TEXT, 0.99, (120, 60, 900, 140))], "detections": None}
+
+
 def prepare_demo(directory: Path):
     directory.mkdir(parents=True, exist_ok=True)
     image = Image.new("RGB", (128, 128), "#19746b")
@@ -130,7 +159,7 @@ def prepare_demo(directory: Path):
         "product_images": ["reference.png"],
         "geography": "IN",
         "season": "summer",
-        "text": {"mode": "exact", "source_text": "Stay refreshed"},
+        "text": {"mode": "exact", "source_text": DEMO_TEXT},
         "n_candidates": 3,
         "aspect_ratio": "1:1",
     }

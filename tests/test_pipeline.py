@@ -37,8 +37,10 @@ def test_end_to_end_exact_all_candidates_saved_and_resume_no_calls(run_pipeline,
     assert resumed == result
     assert len(backend.calls) == 7
     assert all(c["status"] == "generated_unscored" for c in result["candidates"])
-    tables = {r["name"] for r in state.rows("SELECT name FROM sqlite_master WHERE type='table'")}
-    assert "evaluation" not in tables and "selection" not in tables
+    # A generation-only run (no evaluator) records no evaluations or selection.
+    assert (
+        state.rows("SELECT * FROM evaluation") == [] and state.rows("SELECT * FROM selection") == []
+    )
 
 
 def test_extract_and_multireference_order(run_pipeline, request_data, state):

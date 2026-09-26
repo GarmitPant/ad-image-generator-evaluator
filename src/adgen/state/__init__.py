@@ -10,7 +10,7 @@ from pathlib import Path
 
 from ..util import atomic_write, canonical, digest, fingerprint, now
 
-MIGRATIONS = ["001_generation.sql", "002_remove_budget_cap.sql"]
+MIGRATIONS = ["001_generation.sql", "002_remove_budget_cap.sql", "003_evaluation.sql"]
 SCHEMA_VERSION = len(MIGRATIONS)
 
 
@@ -290,4 +290,9 @@ class State:
                 (run_id,),
             ),
             "events": self.rows("SELECT * FROM event WHERE run_id=? ORDER BY event_id", (run_id,)),
+            "evaluations": self.rows(
+                "SELECT * FROM evaluation WHERE run_id=? ORDER BY candidate_index, created_at",
+                (run_id,),
+            ),
+            "selection": self.one("SELECT * FROM selection WHERE run_id=?", (run_id,)),
         }

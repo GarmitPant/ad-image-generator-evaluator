@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+from importlib.util import find_spec
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -8,33 +9,50 @@ from pydantic import ValidationError
 
 from .config import PipelineConfig, load_policy
 from .contracts import AdRequest
-from .demo import SyntheticProvider, prepare_demo
-from .pipeline import Pipeline, export_run
-from .providers import LiveProvider, ReplayProvider, export_fixtures
+from .demo import DEMO_VISION, SyntheticProvider, prepare_demo
+from .eval.config import EvaluatorConfig
+from .eval.vision import LocalVision, ReplayVision, SyntheticVision, export_vision_fixtures
+from .pipeline import GENERATED, Pipeline, export_run, generated
+from .providers import LiveProvider, ReplayProvider, export_fixtures, run_executions
 from .state import SCHEMA_VERSION, Blocked, StageFailed, State
 
 
 def parser():
     root = argparse.ArgumentParser(
-        description="Generation-only ad pipeline. No evaluation or winner selection."
+        description="Ad generation with per-candidate evaluation and ranking."
     )
     root.add_argument("--db", default=os.getenv("ADGEN_STATE_DB", "runs/state.db"))
     root.add_argument("--config", default="config/pipeline.toml")
     root.add_argument("--policy", default="policy/guardrails.yaml")
+    root.add_argument("--evaluator-config", default="config/evaluator.toml")
     commands = root.add_subparsers(dest="command", required=True)
-    generation = commands.add_parser("generate")
-    generation.add_argument("--request", required=True, type=Path)
-    generation.add_argument("--mode", choices=["replay", "live"], default="replay")
-    generation.add_argument("--fixtures", type=Path)
-    generation.add_argument(
-        "--run-id",
-        help="Resume this immutable run; same request, references, config and mode required",
-    )
-    generation.add_argument(
-        "--allow-paid",
-        action="store_true",
-        help="Explicit authorization for paid live inference; spend limits are set on the provider accounts",
-    )
+    for name, help_text in [
+        ("generate", "Generate candidates, evaluate each and rank them (unless --skip-evaluation)"),
+        (
+            "evaluate",
+            "Evaluate an existing run's candidates (resumes it; generation is not repeated)",
+        ),
+    ]:
+        command = commands.add_parser(name, help=help_text)
+        command.add_argument("--request", required=True, type=Path)
+        command.add_argument("--mode", choices=["replay", "live"], default="replay")
+        command.add_argument("--fixtures", type=Path)
+        command.add_argument(
+            "--run-id",
+            required=name == "evaluate",
+            help="Resume this immutable run; same request, references, config and mode required",
+        )
+        command.add_argument(
+            "--allow-paid",
+            action="store_true",
+            help="Explicit authorization for paid live inference; spend limits are set on the provider accounts",
+        )
+        if name == "generate":
+            command.add_argument(
+                "--skip-evaluation",
+                action="store_true",
+                help="Generation only (no scores or winner)",
+            )
     demo = commands.add_parser(
         "demo", help="Offline synthetic fixtures, visibly labeled; never calls providers"
     )
@@ -91,9 +109,16 @@ def main(argv=None):
         if args.command == "export-fixtures":
             with state.lock(args.run_id):
                 count = export_fixtures(state, args.run_id, args.destination)
+                vision = export_vision_fixtures(
+                    state, run_executions(state, args.run_id), args.destination
+                )
             print(
                 json.dumps(
-                    {"recorded_calls": count, "fixture_directory": str(args.destination.resolve())}
+                    {
+                        "recorded_calls": count,
+                        "vision_records": vision,
+                        "fixture_directory": str(args.destination.resolve()),
+                    }
                 )
             )
             return 0
@@ -104,10 +129,12 @@ def main(argv=None):
             return 0
         config = PipelineConfig.load(args.config)
         policy = load_policy(args.policy)
+        eval_config = EvaluatorConfig.load(args.evaluator_config)
+        evaluate = not getattr(args, "skip_evaluation", False)
         if args.command == "demo":
             request_path = prepare_demo(args.directory)
             backend = SyntheticProvider(args.directory / "fixtures")
-            mode, run_id = "replay", None
+            mode, run_id, vision = "replay", None, SyntheticVision(**DEMO_VISION)
         else:
             request_path = args.request
             mode, run_id = args.mode, args.run_id
@@ -118,29 +145,47 @@ def main(argv=None):
                 if not os.environ.get("OPENAI_API_KEY") or not os.environ.get("GEMINI_API_KEY"):
                     raise Blocked("missing_provider_credentials")
                 backend = LiveProvider(config)
+                if evaluate and not all(
+                    find_spec(m) for m in ("paddleocr", "transformers", "torch")
+                ):
+                    raise Blocked("evaluator_models_missing_install_eval_extra_or_skip_evaluation")
+                vision = LocalVision(eval_config)
             else:
                 if not args.fixtures:
                     raise Blocked("replay_requires_explicit_fixture_directory")
-                backend = ReplayProvider(args.fixtures)
+                backend, vision = ReplayProvider(args.fixtures), ReplayVision(args.fixtures)
         request = AdRequest.model_validate_json(request_path.read_text())
-        pipeline = Pipeline(state, config, policy, backend, mode)
+        pipeline = Pipeline(
+            state, config, policy, backend, mode, (eval_config, vision) if evaluate else None
+        )
         summary = pipeline.run(request, request_path.resolve().parent, run_id=run_id)
+        if args.command == "demo":  # make the demo replayable, including its vision evidence
+            export_vision_fixtures(
+                state, run_executions(state, summary["run_id"]), args.directory / "fixtures"
+            )
         print(
             json.dumps(
                 {
                     "run_id": summary["run_id"],
                     "status": summary["status"],
                     "synthetic": summary["synthetic"],
+                    "evaluation_performed": summary["evaluation_performed"],
+                    "winner": summary["winner"],
+                    "approved": summary.get("approved", False),
+                    "ranking": summary.get("ranking"),
                     "candidates": summary["candidates"],
                     "export_directory": str(state.root / "exports" / summary["run_id"]),
-                    "evaluation_performed": False,
                 },
                 indent=2,
             )
         )
-        if summary["status"] != "generated_unscored":
+        if not generated(summary["candidates"]):
             return 2
-        return 0 if all(c["status"] == "generated_unscored" for c in summary["candidates"]) else 3
+        return (
+            0
+            if all(c["status"] in GENERATED - {"evaluation_failed"} for c in summary["candidates"])
+            else 3
+        )
     except (Blocked, StageFailed, OSError, ValueError) as exc:
         print(json.dumps(error_payload(exc, getattr(pipeline, "run_id", None))))
         return 2

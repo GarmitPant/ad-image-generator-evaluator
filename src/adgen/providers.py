@@ -56,16 +56,24 @@ def record_fixture(directory, invocation, result):
     atomic_write(path, data)
 
 
-def recorded_calls(state, run_id):
-    """Include upstream cache provenance, not only calls billed to this run."""
-    snapshot = state.inspect(run_id)
-    executions = {row["exec_id"] for row in snapshot["stages"]}
-    for row in snapshot["stages"]:
+def run_executions(state, run_id):
+    """A run's stage executions plus upstream cache sources (reused_from chains)."""
+    stages = state.rows(
+        "SELECT exec_id, reused_from FROM stage_execution WHERE run_id=?", (run_id,)
+    )
+    executions = {row["exec_id"] for row in stages}
+    for row in stages:
         parent = row["reused_from"]
         while parent:
             executions.add(parent)
             record = state.one("SELECT reused_from FROM stage_execution WHERE exec_id=?", (parent,))
             parent = record["reused_from"] if record else None
+    return executions
+
+
+def recorded_calls(state, run_id):
+    """Include upstream cache provenance, not only calls billed to this run."""
+    executions = run_executions(state, run_id)
     calls = []
     for exec_id in sorted(executions):
         calls.extend(

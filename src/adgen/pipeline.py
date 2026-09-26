@@ -1,5 +1,5 @@
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -8,11 +8,14 @@ from .assets import normalize_image, read_references
 from .config import config_hash
 from .context import resolve_context
 from .contracts import AdRequest, CopySelection, CreativePlan, GuardrailReview, ProductProfile
+from .eval.compose import RANKING_RULE, rank
+from .eval.evaluator import Evaluator
+from .eval.vision import VisionGateway
 from .planning import compile_prompt, keyword_review, planner_prompt, review_prompt, validate_plan
 from .providers import Gateway, LiveProvider, recorded_calls
 from .state import Blocked, StageFailed, failure
 from .text import exact_selection, freeze_selection, source_contract
-from .util import atomic_write, canonical, fingerprint
+from .util import atomic_write, canonical, fingerprint, now
 
 INVALID_PLAN = "creative_plan_invalid"
 # Also accept the exception-name codes persisted by earlier versions, so old runs still resume.
@@ -40,10 +43,14 @@ class Shared:
     text_sha: str
     intake_sha: str
     reference_hashes: list
+    evaluation: dict = field(default_factory=dict)  # request-level evaluator results, if enabled
+
+
+GENERATED = {"generated_unscored", "evaluated", "evaluation_failed"}
 
 
 def generated(candidates):
-    return any(c["status"] == "generated_unscored" for c in candidates)
+    return any(c["status"] in GENERATED for c in candidates)
 
 
 def run_status(candidates):
@@ -73,13 +80,15 @@ def extract_prompt(contract):
 
 
 class Pipeline:
-    def __init__(self, state, config, policy, backend, mode="replay"):
+    def __init__(self, state, config, policy, backend, mode="replay", evaluation=None):
+        """evaluation: optional (EvaluatorConfig, vision backend); None = generation only."""
         if mode == "replay" and isinstance(backend, LiveProvider):
             raise Blocked("live_backend_forbidden_in_replay")
         if mode not in {"live", "replay"}:
             raise ValueError("invalid mode")
         self.state, self.config, self.policy = state, config, policy
         self.backend, self.mode = backend, mode
+        self.evaluation, self.evaluator = evaluation, None
         self.key = fingerprint({"effective_config": config_hash(config, policy), "mode": mode})
 
     def run(self, request: AdRequest, base: Path, *, run_id=None):
@@ -97,6 +106,15 @@ class Pipeline:
         run_id = self.state.create_run(request, identity, self.config, self.key, self.mode, run_id)
         self.run_id = run_id
         self.gateway = Gateway(self.state, run_id, self.config, self.backend, self.mode)
+        if self.evaluation:
+            eval_config, vision = self.evaluation
+            self.evaluator = Evaluator(
+                self.state,
+                self.gateway,
+                VisionGateway(self.state, vision, eval_config),
+                eval_config,
+                self.policy,
+            )
         with self.state.lock(run_id):
             try:
                 summary = self._execute(request, refs, contract)
@@ -187,6 +205,9 @@ class Pipeline:
             text_sha,
             intake_sha,
             reference_hashes,
+            self._request_evaluation(
+                contract, contract_sha, text_plan, text_sha, profile, profile_sha, reference_hashes
+            ),
         )
         previous = []
         for index in range(1, request.n_candidates + 1):
@@ -202,9 +223,15 @@ class Pipeline:
         candidates = state.rows(
             "SELECT * FROM candidate WHERE run_id=? ORDER BY candidate_index", (self.run_id,)
         )
-        summary_input = state.artifact(canonical(candidates), "candidate_manifest")
+        selection = self._select(candidates) if self.evaluator else None
+        summary_input = state.artifact(
+            canonical(
+                {"candidates": candidates, "selection": selection} if selection else candidates
+            ),
+            "candidate_manifest",
+        )
         summary, _ = self.stage(
-            "export",
+            "export_evaluated" if self.evaluator else "export",
             {
                 "candidates": summary_input,
                 "request": request_sha,
@@ -214,13 +241,19 @@ class Pipeline:
                 "profile": profile_sha,
             },
             lambda _: {
-                "version": "generation-summary/1",
+                "version": "run-summary/2" if self.evaluator else "generation-summary/1",
                 "run_id": self.run_id,
                 "request_id": request.request_id,
                 "mode": self.mode,
-                "status": "generated_unscored" if generated(candidates) else "no_usable_candidates",
-                "evaluation_performed": False,
-                "winner": None,
+                "status": (
+                    "evaluated"
+                    if any(c["status"] == "evaluated" for c in candidates)
+                    else ("generated_unscored" if generated(candidates) else "no_usable_candidates")
+                ),
+                "evaluation_performed": bool(self.evaluator),
+                "winner": selection["winner_index"] if selection else None,
+                "approved": selection["approved"] if selection else False,
+                "ranking": selection["ranking"] if selection else None,
                 "candidates": candidates,
                 "text_plan_artifact": text_sha,
                 "profile_artifact": profile_sha,
@@ -288,10 +321,150 @@ class Pipeline:
             }
 
         gated, _ = self.stage("output_gate", {"response": image_sha}, output_gate, candidate=index)
+        status = "generated_unscored"
+        if self.evaluator:
+            status = self._evaluate_candidate(
+                index, shared, gated["image_artifact"], guardrail_sha, guardrail_status
+            )
         state.write(
-            "UPDATE candidate SET status='generated_unscored',guardrail_status=?,image_artifact=?,error_code=NULL WHERE run_id=? AND candidate_index=?",
-            (guardrail_status, gated["image_artifact"], self.run_id, index),
+            "UPDATE candidate SET status=?,guardrail_status=?,image_artifact=?,error_code=NULL WHERE run_id=? AND candidate_index=?",
+            (status, guardrail_status, gated["image_artifact"], self.run_id, index),
         )
+
+    # ------------------------------------------------------------------ evaluation (S10-S11)
+    def _request_evaluation(
+        self, contract, contract_sha, text_plan, text_sha, profile, profile_sha, reference_hashes
+    ):
+        if not self.evaluator:
+            return {}
+        state, evaluator = self.state, self.evaluator
+        config_sha = state.artifact(canonical(evaluator.config.model_dump()), "evaluator_config")
+        selection, selection_sha = self.stage(
+            "selection_evaluation",
+            {"source_contract": contract_sha, "text": text_sha, "evaluator_config": config_sha},
+            lambda exec_id: evaluator.selection(exec_id, contract, text_plan),
+        )
+        references, references_sha = self.stage(
+            "reference_evidence",
+            {
+                **{f"reference_{i}": sha for i, sha in enumerate(reference_hashes)},
+                "profile": profile_sha,
+                "evaluator_config": config_sha,
+            },
+            lambda exec_id: evaluator.references(exec_id, reference_hashes, profile),
+            cache=True,
+        )
+        return {
+            "config_sha": config_sha,
+            "selection": selection,
+            "selection_sha": selection_sha,
+            "references": references,
+            "references_sha": references_sha,
+        }
+
+    def _evaluate_candidate(self, index, shared, image_sha, guardrail_sha, guardrail_status):
+        """An evaluation crash never discards a generated image; it is recorded as evaluation_failed."""
+        ev = shared.evaluation
+        try:
+            record, record_sha = self.stage(
+                "evaluation",
+                {
+                    "image": image_sha,
+                    "text": shared.text_sha,
+                    "context": shared.context_sha,
+                    "profile": shared.profile_sha,
+                    "selection": ev["selection_sha"],
+                    "references": ev["references_sha"],
+                    "guardrails": guardrail_sha,
+                    "evaluator_config": ev["config_sha"],
+                },
+                lambda exec_id: self.evaluator.candidate(
+                    exec_id,
+                    image_sha,
+                    profile=shared.profile,
+                    context=shared.context,
+                    text_plan=shared.text_plan,
+                    selection=ev["selection"],
+                    references=ev["references"],
+                    reference_hashes=shared.reference_hashes,
+                    guardrail_status=guardrail_status,
+                ),
+                candidate=index,
+            )
+        except Exception as exc:
+            self.state.event(
+                self.run_id, "evaluation_failed", {"candidate": index, "code": failure(exc)[1]}
+            )
+            return "evaluation_failed"
+        dims = {k: record[k] for k in ("text_selection", "text_rendering", "product", "context")}
+        self.state.write(
+            "INSERT OR IGNORE INTO evaluation VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                fingerprint({"run": self.run_id, "candidate": index, "record": record_sha}),
+                self.run_id,
+                index,
+                image_sha,
+                record_sha,
+                record["evaluator_version"],
+                record["overall_verdict"],
+                record["overall_score"],
+                record["failed_required_checks"],
+                *[v for d in dims.values() for v in (d["verdict"], d["score"])],
+                record["execution_status"],
+                now(),
+            ),
+        )
+        return "evaluated"
+
+    def _select(self, candidates):
+        latest = {}
+        for row in self.state.rows(
+            "SELECT * FROM evaluation WHERE run_id=? ORDER BY created_at", (self.run_id,)
+        ):
+            latest[row["candidate_index"]] = row
+        ranked = rank(
+            [
+                {
+                    "candidate_index": c["candidate_index"],
+                    "guardrail_status": c["guardrail_status"],
+                    "evaluation": latest.get(c["candidate_index"])
+                    if c["status"] == "evaluated"
+                    else None,
+                }
+                for c in candidates
+            ]
+        )
+        winner = ranked[0] if ranked and ranked[0]["evaluation"] else None
+        ranking = [
+            {
+                "candidate_index": r["candidate_index"],
+                "guardrail_status": r["guardrail_status"],
+                "overall_verdict": r["evaluation"]["overall_verdict"] if r["evaluation"] else None,
+                "failed_required_checks": r["evaluation"]["failed_required_checks"]
+                if r["evaluation"]
+                else None,
+                "overall_score": r["evaluation"]["overall_score"] if r["evaluation"] else None,
+            }
+            for r in ranked
+        ]
+        selection = {
+            "winner_index": winner["candidate_index"] if winner else None,
+            "approved": bool(winner and winner["evaluation"]["overall_verdict"] == "pass"),
+            "ranking": ranking,
+            "ranking_rule": RANKING_RULE,
+        }
+        self.state.write(
+            "INSERT OR REPLACE INTO selection VALUES(?,?,?,?,?,?)",
+            (
+                self.run_id,
+                selection["winner_index"],
+                int(selection["approved"]),
+                canonical(ranking).decode(),
+                RANKING_RULE,
+                now(),
+            ),
+        )
+        return selection
 
     def _synthetic_provenance(self):
         receipts = recorded_calls(self.state, self.run_id)
@@ -382,7 +555,8 @@ class Pipeline:
 def export_run(state, run_id, destination=None, *, summary=None):
     if summary is None:
         row = state.one(
-            "SELECT exec_id FROM stage_execution WHERE run_id=? AND stage='export' AND status='succeeded'",
+            "SELECT exec_id FROM stage_execution WHERE run_id=? AND stage IN ('export','export_evaluated') "
+            "AND status='succeeded' ORDER BY stage='export_evaluated' DESC, ended_at DESC LIMIT 1",
             (run_id,),
         )
         if not row:
@@ -396,6 +570,19 @@ def export_run(state, run_id, destination=None, *, summary=None):
             name = f"candidate-{candidate['candidate_index']:02d}.png"
             atomic_write(directory / name, state.read(candidate["image_artifact"]))
             candidate["image_file"] = name
+    evaluations = {}
+    for row in state.rows("SELECT * FROM evaluation WHERE run_id=? ORDER BY created_at", (run_id,)):
+        evaluations[row["candidate_index"]] = row
+    for index, row in evaluations.items():
+        atomic_write(
+            directory / "evaluations" / f"candidate-{index:02d}.json",
+            state.read(row["record_artifact"]),
+        )
+    winner = manifest.get("winner")
+    if winner is not None:
+        best = [c for c in manifest["candidates"] if c["candidate_index"] == winner][0]
+        atomic_write(directory / "best.png", state.read(best["image_artifact"]))
+        manifest["best_file"] = "best.png"
     manifest["ledger"] = {
         key: state.inspect(run_id)["run"][key] for key in ("cost_est_usd", "cost_unknown")
     }
