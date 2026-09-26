@@ -1,0 +1,20 @@
+# Evaluator settings. Thresholds are provisional pilot values until dev-set calibration (docs/design/05 §8).
+version = "evaluator/1"
+judge_effort = "medium"
+
+# Local vision models, loaded offline from the Hugging Face / PaddleX caches at these pins.
+ocr_det_model = "PP-OCRv6_medium_det"   # paddleocr==3.7.0 defaults, pinned explicitly
+ocr_rec_model = "PP-OCRv6_medium_rec"
+detector_model = "IDEA-Research/grounding-dino-tiny"
+detector_revision = "a2bb814dd30d776dcf7e30523b00659f4f141c71"
+embedder_model = "facebook/dinov2-small"
+embedder_revision = "ed25f3a31f01632728cabb09d1542f84ab7b0056"
+
+detector_box_threshold = 0.35    # raw detections kept as evidence
+detector_text_threshold = 0.25
+detector_count_threshold = 0.5   # boxes counted as product instances (Heineken false positive was 0.70; calibrate)
+ocr_confident = 0.8              # at or above: a reading can decide pass/fail
+ocr_noise = 0.5                  # below: treated as noise, recorded only
+line_merge_gap = 0.6             # merge OCR lines into a block if vertical gap <= this x line height
+min_text_height_px = 14          # legibility proxy at 1024 px
+max_block_lines = 3

@@ -28,7 +28,7 @@ Specs: docs/design/05 §5–7 (text, product = same-object P1–P6, context, com
 
 | Step | Deliverable | Status |
 |---|---|---|
-| EV1 | `src/adgen/eval/`: evaluator config (`config/evaluator.toml`), vision backends (Local: PaddleOCR / Grounding DINO / DINOv2, offline and pinned; Replay; Synthetic), vision evidence recording, `[eval]` optional deps | pending |
+| EV1 | Vision backends + evidence recording + `config/evaluator.toml` + `[eval]` extra | **done** — LocalVision verified on real images (OCR ~6 s, detect ~2.5 s, embed <0.3 s after load). PaddleOCR 3.7 defaults to PP-OCRv6; pinned explicitly |
 | EV2 | Text evaluation: selection checks (structural + extract-mode judge) and rendering (OCR line grouping, one-to-one segment matching, CER/WER, duplicate/extra text, product-label exclusion) | pending |
 | EV3 | Visual judge (product P1–P6 + context + image guardrails, one call per candidate), composition, scores, ranking rule | pending |
 | EV4 | Pipeline integration: evaluation stage per candidate, selection, migration 003 (evaluation/selection tables), export best.png, CLI `generate` (evaluates by default; `--skip-evaluation`), `evaluate RUN_ID…`, demo with synthetic vision, vision fixtures in export/replay | pending |
