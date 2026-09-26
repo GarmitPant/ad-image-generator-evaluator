@@ -1,0 +1,80 @@
+{
+  "avoid": [
+    "Additional lettering or logos on props or in the background",
+    "Alteration of the sunglasses’ existing branding or provenance markings",
+    "Flags, landmarks, iconic wildlife or costume shorthand",
+    "People",
+    "Weather cues that conflict with the summer setting",
+    "Glare obscuring the frame or lenses"
+  ],
+  "concept": "A crisp coastal still life that frames the sunglasses against warm stone and clear summer light.",
+  "context_cues": [
+    {
+      "cue": "Sydney Basin–inspired sandstone and understated coastal heath",
+      "kind": "geography"
+    },
+    {
+      "cue": "Bright southern-hemisphere summer light and a clear, warm-weather coastal palette",
+      "kind": "season"
+    }
+  ],
+  "lighting": {
+    "direction": "from the upper left, with controlled highlights on the frame",
+    "quality": "bright sunlight softened by open shade",
+    "time_of_day": "summer afternoon"
+  },
+  "palette": [
+    "sandstone cream",
+    "muted sea blue",
+    "warm sage",
+    "black",
+    "dark gray"
+  ],
+  "people": "none",
+  "product_placement": {
+    "orientation": "Three-quarter front view on the plinth, showing both lenses, outer-corner accents and curved arms; a",
+    "scale": 0.7,
+    "zone": "middle_center"
+  },
+  "rationale": "The central product cell, three separate text cells and bottom text band do not overlap. Regional material and planting suggest place without relying on national icons, while the light conveys summer.",
+  "setting": "An understated outdoor terrace with Sydney Basin–inspired sandstone and a distant, unfocused coastal horizon. The setting suggests a region without depicting a landmark.",
+  "surface_and_props": [
+    "Unmarked pale sandstone plinth",
+    "Sparse coastal heath foliage kept out of the text areas",
+    "Soft horizon and sky in the background"
+  ],
+  "text_layout": [
+    {
+      "alignment": "left",
+      "block_id": "t1",
+      "contrast_treatment": "clean_background",
+      "size": "medium",
+      "type_style": "Clean contemporary sans serif",
+      "zone": "top_left"
+    },
+    {
+      "alignment": "right",
+      "block_id": "t2",
+      "contrast_treatment": "clean_background",
+      "size": "small",
+      "type_style": "Light contemporary sans serif",
+      "zone": "top_right"
+    },
+    {
+      "alignment": "left",
+      "block_id": "t3",
+      "contrast_treatment": "clean_background",
+      "size": "medium",
+      "type_style": "Contemporary sans serif with generous spacing",
+      "zone": "middle_right"
+    },
+    {
+      "alignment": "center",
+      "block_id": "t4",
+      "contrast_treatment": "solid_panel",
+      "size": "small",
+      "type_style": "Legible contemporary sans serif",
+      "zone": "bottom_band"
+    }
+  ]
+}

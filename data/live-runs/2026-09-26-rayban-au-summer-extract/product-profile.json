@@ -1,0 +1,30 @@
+{
+  "age_restricted": false,
+  "category": "Sunglasses",
+  "colors": [
+    "Black frame and arms",
+    "Dark gray lenses",
+    "Silver-colored accents",
+    "White lens lettering"
+  ],
+  "distinctive_components": [
+    "Two dark lenses",
+    "Silver-colored accents at the outer front corners",
+    "Curved arms"
+  ],
+  "materials": [
+    "Glossy, plastic-looking frame",
+    "Dark tinted lenses; material unknown"
+  ],
+  "reference_inconsistencies": [],
+  "silhouette": "Full-rim, rectangular frames with slightly rounded corners and a gently curved browline",
+  "unknowns": [
+    "Exact frame and lens materials",
+    "Model and size",
+    "Whether the lenses are polarized; the visible 'P' alone does not verify lens properties"
+  ],
+  "visible_label_text": [
+    "Ray-Ban P",
+    "Ray-Ban"
+  ]
+}

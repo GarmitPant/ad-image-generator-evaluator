@@ -1,0 +1,37 @@
+{
+  "candidates": [
+    {
+      "candidate_index": 1,
+      "error_code": null,
+      "guardrail_status": "approved",
+      "image_artifact": "bad2add8e04444bc65c66da447dfa4d52141caea8ba9d752a049f0f85ec7857d",
+      "image_file": "candidate-01.png",
+      "run_id": "0d425b20667c4ae180bc26a10a93b550",
+      "status": "generated_unscored"
+    },
+    {
+      "candidate_index": 2,
+      "error_code": null,
+      "guardrail_status": "approved",
+      "image_artifact": "5cbdeeae9aea18ef093d019bef8241beb7b4d064624efe462c3826f9228f88c9",
+      "image_file": "candidate-02.png",
+      "run_id": "0d425b20667c4ae180bc26a10a93b550",
+      "status": "generated_unscored"
+    }
+  ],
+  "context_artifact": "de384767d3dbcd1d7276cf18bd10546ddfdc38f5bb6ffd5868e0e8f02bd3cf89",
+  "evaluation_performed": false,
+  "ledger": {
+    "cost_est_usd": 0.19280049999999999,
+    "cost_unknown": 0
+  },
+  "mode": "live",
+  "profile_artifact": "3bea049a1417f1651f0fe3fa17c8c43a5a55c7ebc4c1c500cb63c4bcb534cf41",
+  "request_id": "rayban-au-summer-extract",
+  "run_id": "0d425b20667c4ae180bc26a10a93b550",
+  "status": "generated_unscored",
+  "synthetic": false,
+  "text_plan_artifact": "bfdba02c0b3f70d12f3f52b2215676e490d7e2bef614f54eb277f6e61e11c570",
+  "version": "generation-summary/1",
+  "winner": null
+}

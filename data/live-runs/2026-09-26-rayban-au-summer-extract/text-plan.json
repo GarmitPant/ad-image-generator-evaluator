@@ -1,0 +1,69 @@
+{
+  "blocks": [
+    {
+      "block_id": "t1",
+      "end": 29,
+      "linebreaks": 0,
+      "role": "product_name",
+      "start": 9,
+      "text": "classic black frames",
+      "visible_chars": 18,
+      "word_count": 3
+    },
+    {
+      "block_id": "t2",
+      "end": 82,
+      "linebreaks": 0,
+      "role": "supporting_text",
+      "start": 65,
+      "text": "Polarized lenses.",
+      "visible_chars": 16,
+      "word_count": 2
+    },
+    {
+      "block_id": "t3",
+      "end": 105,
+      "linebreaks": 0,
+      "role": "tagline",
+      "start": 83,
+      "text": "Built for bright days.",
+      "visible_chars": 19,
+      "word_count": 4
+    },
+    {
+      "block_id": "t4",
+      "end": 219,
+      "linebreaks": 0,
+      "role": "offer",
+      "start": 163,
+      "text": "Free returns within 30 days on all orders placed online.",
+      "visible_chars": 47,
+      "word_count": 10
+    }
+  ],
+  "mode": "extract",
+  "omissions": [
+    {
+      "end": 9,
+      "start": 0,
+      "text": "Meet our "
+    },
+    {
+      "end": 65,
+      "start": 29,
+      "text": ", back in stock for the new season. "
+    },
+    {
+      "end": 83,
+      "start": 82,
+      "text": " "
+    },
+    {
+      "end": 163,
+      "start": 105,
+      "text": " Each pair ships with a hard case and a microfibre cloth. "
+    }
+  ],
+  "semantics_evaluated": false,
+  "version": "text-plan/1"
+}

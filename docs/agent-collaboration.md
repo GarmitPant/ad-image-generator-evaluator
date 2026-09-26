@@ -61,3 +61,9 @@
 - CI verification (before any change): clean clone of 4049341, Python 3.11 arm64, no keys — requirements install, `ruff check`, `pytest` (88 passed), `adgen demo`, demo replay, clean working tree, git-history secret scan and live-mode credential/flag refusal all passed. Remote GitHub Actions status could not be checked (private repo, no `gh`).
 - Change: removed `--budget-usd`, reservations and cap check; added migration 002 dropping `run.budget_cap_usd` and `model_call.reservation_usd`; cost estimates now report-only (0 + `cost_unknown` when usage is missing). Updated tests (removed budget tests; added no-cap live run, v1→v2 migration and cost-estimate tests; fixed future-schema test for multi-row versions) and docs.
 - Validation: 89 passed; ruff check and format clean; demo OK; live mode still refuses without `--allow-paid`; migration verified on a copy of the existing local database (3 runs, 9 calls preserved).
+
+## 2026-09-26 — First live generation run curated (Claude Code)
+
+- Human action: Garmit added his own keys locally and ran `adgen generate --mode live --allow-paid` on the agent-written request `runs/requests/rayban-extract.json` (sunglasses.jpg, AU summer, Extract, protected "Built for bright days.", n_candidates set to 2 by Garmit). Instruction: curate the outputs into the repository.
+- Result: 8 calls completed (4 OpenAI stages + reviews, 2 Gemini images), both 1024×1024, ~$0.19 report-only estimate, ~1.5 min. Candidate 1 renders all four blocks once; candidate 2 duplicates the protected phrase although the prompt contains it once — a naturally occurring rendering negative.
+- Work performed: copied request, text plan, context, product profile, per-candidate image/plan/review/prompt and per-call usage into `data/live-runs/2026-09-26-rayban-au-summer-extract/`; README separates agent observations from human labels; `labels.json` left empty for Garmit's independent labelling. Secret scan clean.

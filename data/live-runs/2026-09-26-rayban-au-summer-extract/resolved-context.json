@@ -1,0 +1,20 @@
+{
+  "avoid_terms": [
+    "snow",
+    "snowfall",
+    "frost",
+    "blizzard"
+  ],
+  "climate_band": "temperate",
+  "context_note": "strong regional variation; no iconic wildlife shortcuts",
+  "country_name": "Australia",
+  "geography": "AU",
+  "hemisphere": "south",
+  "limitation": "Country-level pilot approximation; not a local weather assertion.",
+  "months": [
+    12,
+    1,
+    2
+  ],
+  "season": "summer"
+}

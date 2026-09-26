@@ -15,7 +15,8 @@ Checkpoint maintained by the implementing agent. Current human instruction: fini
 | Live readiness | Adapters wired; G9 account/model compatibility and real image output still unverified |
 | Deferred | UI; all image evaluation, scores, selection and batch evaluation |
 | Spend control | Local budget cap removed (migration 002); limits are set on provider accounts; ledger keeps usage and report-only cost estimates |
-| Next step | G9: first live probe, 1 reference / 1 candidate / Extract, once Garmit adds keys and gives the go-ahead |
+| Live evidence | First live run 2026-09-26 (Garmit's keys): 1 reference, Extract, 2 candidates, AU summer — all 8 calls completed, both images 1024×1024, ~$0.19 estimated. Curated in `data/live-runs/2026-09-26-rayban-au-summer-extract/` |
+| Next step | G9 remainder: 3 candidates and a multi-reference Exact request; then Garmit's human labels; then evaluator E0 |
 
 Implementation and operating details: [generation runbook](generation-runbook.md). Design review and rationale: [implementation plan](generation-implementation-plan.md).
 
@@ -32,7 +33,7 @@ Implementation and operating details: [generation runbook](generation-runbook.md
 | G6 Product analysis | Complete offline | All references, canonical order/set cache, original lineage preserved |
 | G7 Planner/guardrails | Complete offline | Copy isolated; zone validation; approve/replan-approve/reject-render/invalid-stop paths |
 | G8 Orchestration/generation/export | Complete offline | Candidate isolation; one image call each; square/size gate; all PNGs saved; unscored summary and state snapshot |
-| G9 Live compatibility | Deferred by explicit human instruction | No spend approved; no real model-quality, latency or compatibility observations |
+| G9 Live compatibility | Partially verified | Single-reference Extract with 2 candidates succeeded live (models, structured output, Gemini 1:1/1K settings accepted). Multi-reference and Exact paths not yet run live |
 | E0–E2 Evaluators | Not started | Explicitly outside this turn's scope |
 | G10 Evaluation + selection | Not started | Generation-only export exists; no winner or scores |
 | E3–E5 Labels/batches/report | Not started | Depends on later evaluator implementation |
@@ -49,3 +50,4 @@ The two repository-photo smoke runs used **SyntheticProvider**, not visual analy
 - 2026-09-26 — Design v0.4 committed; implementation not started.
 - 2026-09-26 — Garmit requested review and generation implementation, then explicitly selected offline-only work. G0–G8 implemented in this checkpoint with tests and runbook. No evaluator or UI added.
 - 2026-09-26 — Local budget cap removed at Garmit's direction (Claude Code): migration 002, no `--budget-usd`, no reservations; `--allow-paid`, dispatch-before-send, unknown-never-resent and usage-based report-only cost kept. 89 tests pass.
+- 2026-09-26 — First live run (Ray-Ban, AU summer, Extract, 2 candidates) succeeded; curated into `data/live-runs/` with empty human-label template. c2 shows a naturally occurring duplicated-text rendering failure.

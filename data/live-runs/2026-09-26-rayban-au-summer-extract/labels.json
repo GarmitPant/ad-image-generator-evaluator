@@ -1,0 +1,11 @@
+{
+  "status": "pending_human_labels",
+  "instructions": "Garmit labels each candidate per dimension as pass | fail | unsure, ideally before reading the agent observations in README.md. Leave null until labelled.",
+  "labeler": null,
+  "labelled_at": null,
+  "text_selection": {"verdict": null, "note": null},
+  "candidates": {
+    "c1": {"text_rendering": null, "product": null, "context": null, "overall": null, "note": null},
+    "c2": {"text_rendering": null, "product": null, "context": null, "overall": null, "note": null}
+  }
+}
