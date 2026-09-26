@@ -20,6 +20,21 @@ Checkpoint maintained by the implementing agent. Current human instruction: fini
 
 Implementation and operating details: [generation runbook](generation-runbook.md). Design review and rationale: [implementation plan](generation-implementation-plan.md).
 
+## Evaluator build plan (active — resume here)
+
+Human instruction (2026-09-26): implement evaluation, connect it to generation, rank candidates, and produce a reproducible submission bundle (`submission/`: report.md, results.csv, results.json, contact-sheet.html, images/, evidence/, requests.jsonl) with a small human-labelled subset. Keep this checkpoint current so another agent can continue.
+
+Specs: docs/design/05 §5–7 (text, product = same-object P1–P6, context, composition, scores, ranking), 01 §3 S10–S12, 06. Product fidelity does **not** score position or orientation (D32).
+
+| Step | Deliverable | Status |
+|---|---|---|
+| EV1 | `src/adgen/eval/`: evaluator config (`config/evaluator.toml`), vision backends (Local: PaddleOCR / Grounding DINO / DINOv2, offline and pinned; Replay; Synthetic), vision evidence recording, `[eval]` optional deps | pending |
+| EV2 | Text evaluation: selection checks (structural + extract-mode judge) and rendering (OCR line grouping, one-to-one segment matching, CER/WER, duplicate/extra text, product-label exclusion) | pending |
+| EV3 | Visual judge (product P1–P6 + context + image guardrails, one call per candidate), composition, scores, ranking rule | pending |
+| EV4 | Pipeline integration: evaluation stage per candidate, selection, migration 003 (evaluation/selection tables), export best.png, CLI `generate` (evaluates by default; `--skip-evaluation`), `evaluate RUN_ID…`, demo with synthetic vision, vision fixtures in export/replay | pending |
+| EV5 | `adgen report`: submission bundle and human-label agreement (labels CSV) | pending |
+| EV6 | Docs/runbook; live evaluation of the curated Ray-Ban run (paid judge call, needs Garmit's go) | pending |
+
 ## Tickets
 
 | Ticket | Status | Evidence |
