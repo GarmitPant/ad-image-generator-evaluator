@@ -1,5 +1,6 @@
 # Implementation handoff
 
+> Implementation checkpoint (2026-09-26): generation-only v0.1 is implemented and tested offline. Evaluation/selection remain future design below. Read [the runbook](../generation-runbook.md) for actual modules, commands, schema differences and recovery semantics.
 Version 0.4 · 2026-09-26 · Generation implemented first; the pipeline generates 3 candidates, evaluates each and presents the best; the evaluator remains the main judged deliverable
 
 ## 1. Mission

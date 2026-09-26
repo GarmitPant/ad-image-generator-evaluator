@@ -2,9 +2,11 @@
 
 ## Scope and authority
 
-This repository contains both design and implementation for Garmit's G2 hackathon project. Claude Code is the implementing agent and maintains checkpoints in docs/implementation-status.md. Do the work authorized by the current user instruction; documentation changes alone do not authorize paid inference or unrequested application implementation.
+This repository contains both design and implementation for Garmit's G2 hackathon project. The active implementing agent maintains checkpoints in docs/implementation-status.md. Do the work authorized by the current user instruction; documentation changes alone do not authorize paid inference or unrequested application implementation.
 
 Read README.md, docs/implementation-status.md, docs/design/01-generation-pipeline.md, docs/design/06-state-store.md, docs/design/05-evaluation-and-text-contract.md and docs/design/04-implementation-handoff.md. Garmit's latest clarification takes precedence over earlier design assumptions. docs/context/ is a historical context bank, including its obsolete AGENT_BRIEF.md; never copy that over this file.
+
+Current checkpoint: generation v0.1 is implemented and tested offline. See docs/generation-runbook.md for actual interfaces and deviations from the design blueprint. Garmit explicitly deferred live inference, UI and evaluator implementation during this checkpoint. Future paid inference still requires approval.
 
 ## Confirmed direction
 

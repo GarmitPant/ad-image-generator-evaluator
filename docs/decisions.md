@@ -57,3 +57,23 @@ Proposed consequences: one-image baseline; defer repairs/aesthetic planning; use
 | Evaluator vision models local only (PaddleOCR, Grounding DINO tiny, DINOv2 small); hosted later if needed | Confirmed after reviewing the M1/8 GB machine | Modal / HF Endpoints / Replicate / API-only judge (deferred) |
 | Batched evaluation after single-request flow | Confirmed | — |
 | Credit estimate revised: 3 candidates make $10 Gemini tight (~$15 comfortable) | Recommendation | — |
+
+## 2026-09-26 — Generation implementation v0.1 (Codex session)
+
+| Decision | Status and rationale |
+|---|---|
+| Implement generation end to end, without UI/evaluation | Explicitly requested by Garmit; supersedes any requirement to implement evaluator tables during G1 |
+| Offline implementation only | Explicit response to the paid-test question; no inference calls or live compatibility claims |
+| Generation-only success is `generated_unscored`, all candidates saved, winner null | Implementation of the requested staged delivery; eventual scoring/ranking design unchanged |
+| Shared-stage candidate index 0; UUID4 run IDs | Fix SQLite nullable UNIQUE weakness; standard-library IDs sufficient for local pilot |
+| OS lock + database owner, local POSIX only | Avoid unsafe timeout-based stealing of a lock; process death releases the OS lock |
+| Immutable resume and conservative unknown-call handling | Never automatically resend a call whose dispatch may have reached a provider; failures require a new run |
+| Canonical analysis order, declared generation order | Ensure order-independent cache reflects the actual analysis invocation; preserve reference presentation order for rendering |
+| Copy validation before paid product analysis | Reject invalid input/selection early; freeze shared copy before candidate work |
+| Scan visible plan fields, excluding avoid/rationale | Avoid rejecting a plan for naming a prohibited object only in its exclusions |
+| Pinned pip environment instead of uv | Use the available Python environment; direct and transitive pins recorded, no unverified lockfile claim |
+| Replay identity includes system instruction and candidate/attempt | Keep distinct stochastic candidate responses even with identical prompts; avoid stale or ambiguous fixture reuse |
+| Separate raw provider bytes and published PNGs | Preserve original evidence/provenance while enforcing decoded square <=1024 outputs |
+| Static prices/reservations are provisional estimates | No provider-enforced cap or free-token assumption; usage and uncertainty remain explicit |
+
+Detailed differences and operational limits: [generation runbook](generation-runbook.md).

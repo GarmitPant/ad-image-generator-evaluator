@@ -1,39 +1,59 @@
 # Ad image generator and evaluator
 
-G2 hackathon project: generate contextual display ads and demonstrate a rigorous automated evaluator for content, product identity, scene context and rendered text.
+G2 hackathon project. **Generation v0.1 is implemented and verified offline.** Evaluation remains the main eventual deliverable, but has not been implemented. There is no UI, scoring, ranking or winner selection yet. No live inference or model-quality claim has been made.
 
-**This repository holds specifications and implementation. Current status: design v0.3; implementation starting with the generation pipeline. No measured results yet.** See [implementation status](docs/implementation-status.md).
+## Run locally
 
-## Priority
+Python 3.11+; macOS/Linux. From this repository:
 
-The hackathon emphasizes engineering around evaluation methods, criteria, automated tests and trustworthy evidence. For each input the pipeline generates three candidate ads (each from its own LLM creative plan, with simple predefined guardrails), evaluates every candidate, and presents the highest-ranked one while saving all of them. State is recorded in a local SQLite store. Evaluator vision models run locally. Batched evaluation, repairs and UI come later.
+```sh
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.lock
+python -m pip install -e . --no-deps
+adgen state init
+adgen demo
+```
 
-## Providers and keys
+The demo costs nothing, needs no keys and creates clearly marked **synthetic placeholders**, not generated ads. Its output prints a run ID and export directory. SQLite is created automatically at `runs/state.db`; artifacts and exported PNGs are also under gitignored `runs/`.
 
-OpenAI powers the LLM stages; Google Gemini generates images. Copy `.env.example` to `.env` and add your own `GEMINI_API_KEY` and `OPENAI_API_KEY`. No keys are committed. Offline tests need no keys.
+```sh
+pytest -q
+ruff check src tests
+```
 
-## Text input
+The tests deny network connections, including when exercising real SDK serialization with mock HTTP transports. See the [implementation checkpoint](docs/implementation-status.md) and [generation runbook](docs/generation-runbook.md).
 
-Freeform text supplies content to display, not visual art direction. Garmit confirmed two modes:
+## What is implemented
 
-- **Exact:** preserve all supplied content, allowing only declared layout whitespace/reflow.
-- **Extract:** select relevant source spans; optional protected phrases must remain unchanged. Freeze the selected copy before image generation.
+Input → validate/normalize 1–3 references → freeze Exact/Extract copy → resolve geography/season → analyze the product → for each candidate: plan → review/replan once → compile prompt → generate one Gemini image → validate/save → export every candidate as `generated_unscored`.
 
-Evaluate both **source → selected copy** (relevance, coverage, meaning and protected content) and **selected copy → rendered pixels** (accuracy, legibility and extra/missing text). A correct rendering of a bad extraction still fails end-to-end text fidelity.
+- 1–4 candidates, default 3, with a separate creative plan for each.
+- OpenAI for product analysis, Extract selection, planning and the **pre-generation plan** review. Gemini for images.
+- Planner sees text roles/lengths, not the supplied copy. Freeform text is content to display, not art direction.
+- **Exact:** keep the source string, punctuation, case and line breaks. **Extract:** select exact source spans; protected phrases/spans must remain intact. Pilot capacity: 4 blocks, 120 non-whitespace characters and 20 whitespace-delimited words total.
+- All references are passed to generation in declared order. Originals and normalized renditions are saved, hashed and linked.
+- Static plan guardrails plus an LLM reviewer; one replan. A second rejected but valid plan is rendered with `rejected_after_replan`, as specified.
+- SQLite lineage, estimated dispatch-budget ledger, receipt persistence, immutable resume, exact-match replay and individual candidate failure isolation.
+- Output validation checks image bytes, square aspect and size. It does **not** judge text accuracy, product fidelity or context correctness. Future evaluation must do that.
 
-## Read in order
+## Requests and provider configuration
 
-1. [Generation pipeline](docs/design/01-generation-pipeline.md)
-2. [State store](docs/design/06-state-store.md)
-3. [Evaluation and text contract](docs/design/05-evaluation-and-text-contract.md)
-4. [Implementation handoff](docs/design/04-implementation-handoff.md)
-5. [Model decisions and sources](docs/design/02-model-decisions.md)
-6. [Challenges and decisions](docs/design/03-challenges-and-decisions.md)
+Examples: [three-reference Exact](examples/heineken-exact.json), [single-reference Extract](examples/bottle-extract.json). Image paths resolve relative to the request JSON file. Geography: `US`, `GB`, `DE`, `JP`, `IN`, `AU`, `BR`, `AE`; season: `spring`, `summer`, `autumn`, `winter`.
 
-Reference product photos and their provenance: [data/products](data/products/README.md).
+Model IDs, efforts, timeouts and provisional cost estimates live in [config/pipeline.toml](config/pipeline.toml). Only `.env.example` with empty placeholders is committed. Copy it to `.env` and provide your own `OPENAI_API_KEY` and `GEMINI_API_KEY` when live testing is authorized. The current checkpoint is explicitly **offline only**.
 
-Read [AGENTS.md](AGENTS.md) before implementation. Record decisions in [docs/decisions.md](docs/decisions.md) and actual agent work in [docs/agent-collaboration.md](docs/agent-collaboration.md).
+A future live call requires both `--mode live --allow-paid` and a positive `--budget-usd`. Local estimates are not provider-enforced billing caps. The runbook contains the future command, budget arithmetic, replay/resume instructions and limitations. No automatic provider retries are enabled.
 
-## Provenance
+## Design and next phase
 
-The original context is preserved in `docs/context/`, copied from `GarmitPant/resume-workbench` commit `b937bc4`. Garmit's subsequent clarification supersedes the historical blanket whole-input-verbatim rule and generation-first priority. Current contracts live in `docs/design/`; historical requirements are retained for accurate disclosure.
+1. [Review and implementation plan](docs/generation-implementation-plan.md)
+2. [Generation design](docs/design/01-generation-pipeline.md)
+3. [State-store design](docs/design/06-state-store.md)
+4. [Evaluation and text contract — not yet implemented](docs/design/05-evaluation-and-text-contract.md)
+5. [Implementation handoff](docs/design/04-implementation-handoff.md)
+6. [Model decisions and sources](docs/design/02-model-decisions.md)
+
+The eventual evaluator should assess source → selected-copy fidelity, selected-copy → rendered-text fidelity, product identity and independent geography/season criteria for every candidate. Only then add ranking and batch evaluation.
+
+Reference photo provenance: [data/products](data/products/README.md). Original context came from `GarmitPant/resume-workbench` commit `b937bc4` and remains in `docs/context/`; it is historical. Read [AGENTS.md](AGENTS.md), [decisions](docs/decisions.md) and [collaboration record](docs/agent-collaboration.md) before continuing.

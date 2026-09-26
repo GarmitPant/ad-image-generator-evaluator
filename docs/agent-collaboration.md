@@ -46,3 +46,11 @@
 - Agent proposals accepted: static policy file with optional country notes, code ranking rule with verdicts gating scores, `outputs/` export layout, candidate/evaluation/selection tables. Hosted-inference options (Modal, HF Endpoints, Replicate) presented and deferred.
 - Work performed: rewrote 01 (v0.4), extended 06 schema, updated 05 (scores, ranking, multi-reference product evidence, image-level guardrail checks, local model table), 04 tickets (G0–G10, E0–E5), 02 costs, 03/decisions, AGENTS/README, .gitignore (`outputs/`), implementation-status.
 - Validation: cross-document consistency and link checks only. No code, tests or paid inference.
+
+## 2026-09-26 — Generation implementation v0.1 (Codex)
+
+- Human instructions: inspect the revised plan/specs and implement generation end to end in this repository, no UI and no evaluator; approximately three hours remain. In response to a request for live-test authorization, Garmit explicitly selected **offline implementation only**.
+- Review: retained v0.4 architecture. Corrected nullable shared-stage uniqueness, analysis cache ordering, keyword scans of avoid/rationale, and generation-only completion/export semantics. Recorded the plan in `docs/generation-implementation-plan.md`.
+- Work: implemented Python contracts, intake/context/text logic, SQLite stages/artifacts/calls/events/candidates, immutable resume and locks, provisional budget reservations, OpenAI and Gemini adapters, strict replay and fixture export, product analysis, creative planning/review/replan, prompt compilation, multi-candidate orchestration, output gate, CLI, synthetic demo and generation-only export. Added pinned dependencies, examples, runbook and offline CI workflow.
+- Validation: 88 offline tests and Ruff passed; real installed SDKs exercised via mock HTTP transports with sockets denied. Synthetic end-to-end smoke runs using the existing Heineken and bottle reference photos saved 3 and 2 candidate PNGs respectively. Tested the ~42 MP reference. No real inference occurred; synthetic outputs are prominently labeled and cannot substantiate model quality.
+- Boundaries: no paid usage, API-key exposure, evaluator/UI implementation, image scores or winner claims. Live compatibility is deferred. Commits use the configured human author, without AI coauthor trailers.

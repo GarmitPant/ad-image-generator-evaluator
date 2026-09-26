@@ -1,5 +1,6 @@
 # Generation pipeline
 
+> Implementation checkpoint (2026-09-26): generation-only v0.1 is implemented and tested offline. Evaluation/selection remain future design below. Read [the runbook](../generation-runbook.md) for actual modules, commands, schema differences and recovery semantics.
 Version 0.4 · 2026-09-26 · Supersedes v0.3 (single image; per-rule guardrail review) and v0.2 (fixed template, per-pair scene registry)
 
 ## 1. Purpose and confirmed changes

@@ -1,0 +1,14 @@
+version: "guardrails/1"
+global_rules:
+  - {id: GR-STEREO, text: "No racial, national, ethnic or religious caricature or costume shorthand."}
+  - {id: GR-TOKEN, text: "Do not use flags, famous landmarks or iconic wildlife as the geography signal."}
+  - {id: GR-RELIGION, text: "No religious symbols, sites or ceremonies as decoration."}
+  - {id: GR-SEASON, text: "No visible cues contradicting the resolved seasonal scene policy."}
+  - {id: GR-PEOPLE, text: "No identifiable real people. No minors with age-restricted products."}
+  - {id: GR-ALCOHOL, text: "For alcohol: no minors, driving, excessive drinking or health claims."}
+  - {id: GR-TEXT, text: "No invented scene text or logos. Preserve reference product branding and provider provenance markings."}
+keywords:
+  GR-TOKEN: [flag, flags, kangaroo, eiffel, taj mahal, statue of liberty]
+  GR-RELIGION: [temple, mosque, church, shrine, religious ceremony]
+country_notes:
+  AE: ["Alcohol products require review under this demo's advertising policy; this is not legal advice."]

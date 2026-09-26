@@ -1,5 +1,6 @@
 # State store
 
+> Implementation checkpoint (2026-09-26): generation-only v0.1 is implemented and tested offline. Evaluation/selection remain future design below. Read [the runbook](../generation-runbook.md) for actual modules, commands, schema differences and recovery semantics.
 Version 0.2 · 2026-09-26 · Architectural requirement confirmed by Garmit; schema details proposed. v0.2 adds candidates, evaluations and selection
 
 ## 1. Purpose

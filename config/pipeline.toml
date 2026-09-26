@@ -1,0 +1,22 @@
+version = "generation/1"
+llm_model = "gpt-6-sol"
+image_model = "gemini-3.1-flash-image"
+analysis_effort = "low"
+extract_effort = "medium"
+planner_effort = "medium"
+review_effort = "low"
+llm_timeout_seconds = 60
+image_timeout_seconds = 120
+max_output_tokens = 4096
+image_max_output_tokens = 4096
+max_llm_input_chars = 40000
+
+# Conservative dispatch estimates, not a provider-enforced billing ceiling.
+llm_reservation_usd = 0.12
+image_reservation_usd = 0.30
+openai_input_per_million = 2.0
+openai_output_per_million = 10.0
+google_input_per_million = 0.50
+google_text_output_per_million = 3.0
+google_image_output_per_million = 60.0
+pricing_version = "2026-09-26-provisional"
