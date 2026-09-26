@@ -1,0 +1,405 @@
+{
+  "request_id": "b1-03-bottle-jp-spring-exact",
+  "run_id": "c36cf9ddd0bc48f6952158d18a371dda",
+  "candidate_id": "c36cf9dd-c2",
+  "candidate_index": 2,
+  "geography": "JP",
+  "season": "spring",
+  "text_mode": "exact",
+  "status": "evaluated",
+  "error_code": null,
+  "guardrail_status": "approved",
+  "image_artifact": "d0a7e64953214f363c520e72dd8d66f1178905248c5e3682580a48d1ecd91f66",
+  "llm_model": "gpt-6-sol",
+  "image_model": "gemini-3.1-flash-image",
+  "generation_config_version": "generation/2",
+  "evaluator_version": "evaluator/3",
+  "overall_verdict": "pass",
+  "overall_score": 1.0,
+  "failed_required_checks": 0,
+  "text_selection_verdict": "pass",
+  "text_selection_score": 1.0,
+  "text_rendering_verdict": "pass",
+  "text_rendering_score": 1.0,
+  "product_verdict": "pass",
+  "product_score": 1.0,
+  "context_verdict": "pass",
+  "context_score": 1.0,
+  "failed_checks": [],
+  "unknown_checks": [],
+  "region_recognisable": "pass",
+  "product": "Reusable bottle",
+  "source_text": "Refill. Reuse. Repeat.",
+  "selected_copy": [
+    "Refill. Reuse. Repeat."
+  ],
+  "dinov2_best_similarity": 0.8293,
+  "execution_status": "ok",
+  "evaluation_errors": [],
+  "winner": false,
+  "approved": false,
+  "generation_latency_s": 26.39,
+  "evaluation_latency_s": 16.99,
+  "generation_cost_usd": 0.080921,
+  "evaluation_cost_usd": 0.01029,
+  "image": "images/b1-03-bottle-jp-spring-exact__c36cf9dd-c2.png",
+  "evidence": "evidence/b1-03-bottle-jp-spring-exact__c36cf9dd-c2.json",
+  "evidence_card": "evidence/b1-03-bottle-jp-spring-exact__c36cf9dd-c2.md",
+  "why_failed": [],
+  "unsure_about": [],
+  "evaluation_record": {
+    "context": {
+      "checks": [
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the scene consistent with spring in Japan (months [3, 4, 5], northern hemisphere)? Answer no if any visible cue contradicts that season."
+          },
+          "id": "C-SEASON",
+          "reason": "Blooming cherry blossoms are consistent with spring; no contradictory seasonal cues are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the setting plausible for Japan, with nothing that clearly contradicts it?"
+          },
+          "id": "C-SETTING",
+          "reason": "The window-side setting, blossoms, and dish are plausible in Japan, with nothing visibly contradictory.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Would a typical viewer recognise this setting as Japan (or a specific region of it) from visible cues? Name the cues."
+          },
+          "id": "C-REGION",
+          "reason": "Cherry blossoms and a Japanese-style patterned dish provide recognizable Japanese cues.",
+          "required": false,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No racial, national, ethnic or religious caricature of people, and no traditional costume used as shorthand for a country. Regional architecture, materials, textiles and patterns, crafts, food and drink settings, street furniture and native plants are encouraged."
+          },
+          "id": "GR-STEREO",
+          "reason": "There are no people or caricatures; the scene uses flowers and a patterned dish.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No flags or national emblems. Landmarks and skylines may appear only as background context and must never dominate the product."
+          },
+          "id": "GR-TOKEN",
+          "reason": "No flags, national emblems, or dominant landmarks are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No religious symbols, sites or ceremonies, including as background decoration."
+          },
+          "id": "GR-RELIGION",
+          "reason": "No religious symbols, sites, or ceremonies are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No visible cues contradicting the resolved seasonal scene policy."
+          },
+          "id": "GR-SEASON",
+          "reason": "The blossoms fit a spring scene, and no visible cue contradicts it.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No identifiable real people. No minors with age-restricted products."
+          },
+          "id": "GR-PEOPLE",
+          "reason": "No people are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: For alcohol: no minors, driving, excessive drinking or health claims."
+          },
+          "id": "GR-ALCOHOL",
+          "reason": "No alcohol, drinking, minors, or driving are depicted.",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "errors": [],
+    "evaluator_version": "evaluator/3",
+    "execution_status": "ok",
+    "failed_required_checks": 0,
+    "gates": {
+      "checks": [
+        {
+          "evidence": {
+            "sha256": "d0a7e64953214f363c520e72dd8d66f1178905248c5e3682580a48d1ecd91f66"
+          },
+          "id": "G-DECODE",
+          "reason": "image decodes",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "size": [
+              1024,
+              1024
+            ]
+          },
+          "id": "G-SIZE",
+          "reason": "square and long edge <= 1024",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "guardrail_status": "approved",
+    "image_sha256": "d0a7e64953214f363c520e72dd8d66f1178905248c5e3682580a48d1ecd91f66",
+    "judge_product_count": 1,
+    "latency_s": 16.99,
+    "overall_score": 1.0,
+    "overall_verdict": "pass",
+    "points": {
+      "fail": 0.0,
+      "pass": 1.0,
+      "unknown": 0.5
+    },
+    "product": {
+      "checks": [
+        {
+          "evidence": {
+            "boxes": [
+              {
+                "box": [
+                  576,
+                  284,
+                  784,
+                  922
+                ],
+                "score": 0.8937
+              }
+            ],
+            "detector_count": 1,
+            "judge_count": 1
+          },
+          "id": "P1",
+          "reason": "judge counted 1, detector counted 1; exactly one required and both must agree",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the product in the FINAL image the same type of product as in the reference images?"
+          },
+          "id": "P2",
+          "reason": "The final image shows the same type of reusable bottle.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does it have the same shape and silhouette as the reference product (a different viewing angle is fine)?"
+          },
+          "id": "P3",
+          "reason": "It has the same cylindrical body, rounded shoulders, and flat cap.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does it have the same colours and materials as the reference product (lighting differences are fine)?"
+          },
+          "id": "P4",
+          "reason": "The bottle retains the matte green finish and matching green cap.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Are the reference product's distinctive components preserved: Matching green cap; Narrow dark band below the cap; Faint seam around the lower portion of the bottle? Answer unknown if they are not visible."
+          },
+          "id": "P5",
+          "reason": "The green cap, narrow dark band beneath it, and faint seam near the bottle’s base are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "similarity": {
+              "best": 0.8293,
+              "per_reference": {
+                "ce253624931d1402c3bf7251e6ad0a649ed9c9b0ee6c7a2c2a8c23e1c85caf3e": 0.8293
+              }
+            }
+          },
+          "id": "P-SIM",
+          "reason": "DINOv2 cosine similarity to the closest reference: 0.8293",
+          "required": false,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "score_definition": "per dimension: mean over required checks (pass 1, unknown 0.5, fail 0); text_rendering: mean max(0, 1-CER) per block; overall: unweighted mean. Ranking only; verdicts gate.",
+    "text_rendering": {
+      "checks": [
+        {
+          "evidence": {
+            "blocks": [
+              {
+                "block_id": "t1",
+                "cer": 0.0,
+                "exact_strict": false,
+                "expected": "Refill. Reuse. Repeat.",
+                "min_height_px": 67,
+                "min_score": 1.0,
+                "observed": "Refill. Reuse. Repeat.",
+                "reason": "exact (whitespace-equivalent)",
+                "verdict": "pass",
+                "wer": 0.0
+              }
+            ]
+          },
+          "id": "R-BLOCKS",
+          "reason": "all 1 copy block(s) found exactly once",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "duplicates": [],
+            "extra": [],
+            "uncertain": []
+          },
+          "id": "R-EXTRA",
+          "reason": "no unplanned ad text",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "R-LEGIBLE",
+          "reason": "legibility proxy: confident reads and text height >= min_text_height_px (never fails on its own)",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "diagnostics": {
+        "exact_match_rate": 1.0,
+        "ocr_lines": {
+          "ad": [
+            {
+              "box": [
+                332,
+                75,
+                507,
+                145
+              ],
+              "score": 1.0,
+              "text": "Refill."
+            },
+            {
+              "box": [
+                331,
+                154,
+                548,
+                221
+              ],
+              "score": 1.0,
+              "text": "Reuse."
+            },
+            {
+              "box": [
+                330,
+                228,
+                576,
+                307
+              ],
+              "score": 1.0,
+              "text": "Repeat."
+            }
+          ],
+          "noise": [],
+          "product_label": []
+        }
+      },
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "text_selection": {
+      "checks": [
+        {
+          "evidence": {},
+          "id": "S-SPANS",
+          "reason": "every block is an exact, ordered source span",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "uncovered": []
+          },
+          "id": "S-PROTECTED",
+          "reason": "protected phrases kept whole",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "blocks": 1,
+            "visible_chars": 20,
+            "words": 3
+          },
+          "id": "S-CAPACITY",
+          "reason": "within rendering capacity",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "S-EXACT",
+          "reason": "Exact mode keeps the entire input",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "S-FULL",
+          "reason": "Exact mode: the whole input is the copy; no selection to judge",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "version": "eval-record/1"
+  }
+}

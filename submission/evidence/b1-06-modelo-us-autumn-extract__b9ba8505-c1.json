@@ -1,0 +1,512 @@
+{
+  "request_id": "b1-06-modelo-us-autumn-extract",
+  "run_id": "b9ba8505c1cd4336b91ed1f8931805bd",
+  "candidate_id": "b9ba8505-c1",
+  "candidate_index": 1,
+  "geography": "US",
+  "season": "autumn",
+  "text_mode": "extract",
+  "status": "evaluated",
+  "error_code": null,
+  "guardrail_status": "approved",
+  "image_artifact": "eebd4a1b63d3003f4c5a8a4fdf963923368dea89b4cc1b704482116f3aed9173",
+  "llm_model": "gpt-6-sol",
+  "image_model": "gemini-3.1-flash-image",
+  "generation_config_version": "generation/2",
+  "evaluator_version": "evaluator/3",
+  "overall_verdict": "pass",
+  "overall_score": 1.0,
+  "failed_required_checks": 0,
+  "text_selection_verdict": "pass",
+  "text_selection_score": 1.0,
+  "text_rendering_verdict": "pass",
+  "text_rendering_score": 1.0,
+  "product_verdict": "pass",
+  "product_score": 1.0,
+  "context_verdict": "pass",
+  "context_score": 1.0,
+  "failed_checks": [],
+  "unknown_checks": [],
+  "region_recognisable": "pass",
+  "product": "Beer",
+  "source_text": "Modelo Especial is back for game day. Up to 20% off 12-packs at selected stores this weekend only. Must be 21+ to purchase. Please drink responsibly.",
+  "selected_copy": [
+    "Modelo Especial",
+    "Up to 20% off 12-packs at selected stores this weekend only.",
+    "21+ to purchase.",
+    "Please drink responsibly."
+  ],
+  "dinov2_best_similarity": 0.8675,
+  "execution_status": "ok",
+  "evaluation_errors": [],
+  "winner": false,
+  "approved": false,
+  "generation_latency_s": 33.67,
+  "evaluation_latency_s": 25.3,
+  "generation_cost_usd": 0.086531,
+  "evaluation_cost_usd": 0.012128,
+  "image": "images/b1-06-modelo-us-autumn-extract__b9ba8505-c1.png",
+  "evidence": "evidence/b1-06-modelo-us-autumn-extract__b9ba8505-c1.json",
+  "evidence_card": "evidence/b1-06-modelo-us-autumn-extract__b9ba8505-c1.md",
+  "why_failed": [],
+  "unsure_about": [],
+  "evaluation_record": {
+    "context": {
+      "checks": [
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the scene consistent with autumn in United States (months [9, 10, 11], northern hemisphere)? Answer no if any visible cue contradicts that season."
+          },
+          "id": "C-SEASON",
+          "reason": "Yellow fallen leaves cover parts of the sidewalk; no visible cue contradicts autumn.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the setting plausible for United States, with nothing that clearly contradicts it?"
+          },
+          "id": "C-SETTING",
+          "reason": "The taxi, sidewalk and brownstone-style streetscape are plausible in the United States.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Would a typical viewer recognise this setting as United States (or a specific region of it) from visible cues? Name the cues."
+          },
+          "id": "C-REGION",
+          "reason": "A yellow city taxi, brownstone-style stoops and black iron railings suggest New York City.",
+          "required": false,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No racial, national, ethnic or religious caricature of people, and no traditional costume used as shorthand for a country. Regional architecture, materials, textiles and patterns, crafts, food and drink settings, street furniture and native plants are encouraged."
+          },
+          "id": "GR-STEREO",
+          "reason": "No people or caricatures are depicted.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No flags or national emblems. Landmarks and skylines may appear only as background context and must never dominate the product."
+          },
+          "id": "GR-TOKEN",
+          "reason": "No flags or national emblems are visible; the streetscape remains background context.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No religious symbols, sites or ceremonies, including as background decoration."
+          },
+          "id": "GR-RELIGION",
+          "reason": "No religious symbols, sites or ceremonies are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No visible cues contradicting the resolved seasonal scene policy."
+          },
+          "id": "GR-SEASON",
+          "reason": "Fallen yellow leaves are consistent with autumn.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No identifiable real people. No minors with age-restricted products."
+          },
+          "id": "GR-PEOPLE",
+          "reason": "No people are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: For alcohol: no minors, driving, excessive drinking or health claims."
+          },
+          "id": "GR-ALCOHOL",
+          "reason": "The bottle sits on a table; no people, drinking, or connection between the alcohol and the background taxi is shown.",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "errors": [],
+    "evaluator_version": "evaluator/3",
+    "execution_status": "ok",
+    "failed_required_checks": 0,
+    "gates": {
+      "checks": [
+        {
+          "evidence": {
+            "sha256": "eebd4a1b63d3003f4c5a8a4fdf963923368dea89b4cc1b704482116f3aed9173"
+          },
+          "id": "G-DECODE",
+          "reason": "image decodes",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "size": [
+              1024,
+              1024
+            ]
+          },
+          "id": "G-SIZE",
+          "reason": "square and long edge <= 1024",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "guardrail_status": "approved",
+    "image_sha256": "eebd4a1b63d3003f4c5a8a4fdf963923368dea89b4cc1b704482116f3aed9173",
+    "judge_product_count": 1,
+    "latency_s": 25.29,
+    "overall_score": 1.0,
+    "overall_verdict": "pass",
+    "points": {
+      "fail": 0.0,
+      "pass": 1.0,
+      "unknown": 0.5
+    },
+    "product": {
+      "checks": [
+        {
+          "evidence": {
+            "boxes": [
+              {
+                "box": [
+                  181,
+                  304,
+                  381,
+                  841
+                ],
+                "score": 0.9199
+              }
+            ],
+            "detector_count": 1,
+            "judge_count": 1
+          },
+          "id": "P1",
+          "reason": "judge counted 1, detector counted 1; exactly one required and both must agree",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the product in the FINAL image the same type of product as in the reference images?"
+          },
+          "id": "P2",
+          "reason": "The final image shows a Modelo Especial beer bottle.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does it have the same shape and silhouette as the reference product (a different viewing angle is fine)?"
+          },
+          "id": "P3",
+          "reason": "The bottle has the same narrow neck, rounded shoulders and straight-sided body.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does it have the same colours and materials as the reference product (lighting differences are fine)?"
+          },
+          "id": "P4",
+          "reason": "It retains the amber glass, gold-colored neck and cap, and white front label.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Are the reference product's distinctive components preserved: Condensation droplets on the bottle; Gold-colored neck wrap with a large M and lion motifs; White front label with large Modelo lettering; Gold-colored crimped cap; Barcode on the lower label? Answer unknown if they are not visible."
+          },
+          "id": "P5",
+          "reason": "Droplets, the neck's large M and lion motifs, Modelo label, crimped gold-colored cap and lower-label barcode are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does the product's own branding/label match the reference (Modelo; Especial; CERVEZA; EST. 1925)? Ignore advertising copy placed around the product. Answer unknown if not legible."
+          },
+          "id": "P6",
+          "reason": "The bottle label shows Modelo, Especial and CERVEZA; EST. 1925 appears beneath the neck's M.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "similarity": {
+              "best": 0.8675,
+              "per_reference": {
+                "000c246a52f7f48870c9589057fdab5097b8be06dfffa0fc65887e5bdb585229": 0.8675
+              }
+            }
+          },
+          "id": "P-SIM",
+          "reason": "DINOv2 cosine similarity to the closest reference: 0.8675",
+          "required": false,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "score_definition": "per dimension: mean over required checks (pass 1, unknown 0.5, fail 0); text_rendering: mean max(0, 1-CER) per block; overall: unweighted mean. Ranking only; verdicts gate.",
+    "text_rendering": {
+      "checks": [
+        {
+          "evidence": {
+            "blocks": [
+              {
+                "block_id": "t1",
+                "cer": 0.0,
+                "exact_strict": true,
+                "expected": "Modelo Especial",
+                "min_height_px": 140,
+                "min_score": 1.0,
+                "observed": "Modelo Especial",
+                "reason": "exact (whitespace-equivalent)",
+                "verdict": "pass",
+                "wer": 0.0
+              },
+              {
+                "block_id": "t2",
+                "cer": 0.0,
+                "exact_strict": false,
+                "expected": "Up to 20% off 12-packs at selected stores this weekend only.",
+                "min_height_px": 53,
+                "min_score": 1.0,
+                "observed": "Up to 20% off 12-packs at selected stores this weekend only.",
+                "reason": "exact (whitespace-equivalent)",
+                "verdict": "pass",
+                "wer": 0.0
+              },
+              {
+                "block_id": "t3",
+                "cer": 0.0,
+                "exact_strict": true,
+                "expected": "21+ to purchase.",
+                "min_height_px": 27,
+                "min_score": 0.9713,
+                "observed": "21+ to purchase.",
+                "reason": "exact (whitespace-equivalent)",
+                "verdict": "pass",
+                "wer": 0.0
+              },
+              {
+                "block_id": "t4",
+                "cer": 0.0,
+                "exact_strict": true,
+                "expected": "Please drink responsibly.",
+                "min_height_px": 29,
+                "min_score": 1.0,
+                "observed": "Please drink responsibly.",
+                "reason": "exact (whitespace-equivalent)",
+                "verdict": "pass",
+                "wer": 0.0
+              }
+            ]
+          },
+          "id": "R-BLOCKS",
+          "reason": "all 4 copy block(s) found exactly once",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "duplicates": [],
+            "extra": [],
+            "uncertain": []
+          },
+          "id": "R-EXTRA",
+          "reason": "no unplanned ad text",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "R-LEGIBLE",
+          "reason": "legibility proxy: confident reads and text height >= min_text_height_px (never fails on its own)",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "diagnostics": {
+        "exact_match_rate": 1.0,
+        "ocr_lines": {
+          "ad": [
+            {
+              "box": [
+                30,
+                40,
+                992,
+                180
+              ],
+              "score": 1.0,
+              "text": "Modelo Especial"
+            },
+            {
+              "box": [
+                144,
+                229,
+                895,
+                283
+              ],
+              "score": 1.0,
+              "text": "Up to 20% off 12-packs at selected"
+            },
+            {
+              "box": [
+                382,
+                281,
+                926,
+                334
+              ],
+              "score": 1.0,
+              "text": "stores this weekend only."
+            },
+            {
+              "box": [
+                427,
+                981,
+                596,
+                1008
+              ],
+              "score": 0.9713,
+              "text": "21+ to purchase."
+            },
+            {
+              "box": [
+                724,
+                979,
+                974,
+                1008
+              ],
+              "score": 1.0,
+              "text": "Please drink responsibly."
+            }
+          ],
+          "noise": [],
+          "product_label": [
+            {
+              "box": [
+                255,
+                424,
+                323,
+                473
+              ],
+              "score": 0.9973,
+              "text": "M"
+            },
+            {
+              "box": [
+                188,
+                634,
+                372,
+                719
+              ],
+              "score": 1.0,
+              "text": "Modelo"
+            },
+            {
+              "box": [
+                182,
+                722,
+                212,
+                742
+              ],
+              "score": 0.7858,
+              "text": "ssse"
+            }
+          ]
+        }
+      },
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "text_selection": {
+      "checks": [
+        {
+          "evidence": {},
+          "id": "S-SPANS",
+          "reason": "every block is an exact, ordered source span",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "uncovered": []
+          },
+          "id": "S-PROTECTED",
+          "reason": "protected phrases kept whole",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "blocks": 4,
+            "visible_chars": 101,
+            "words": 19
+          },
+          "id": "S-CAPACITY",
+          "reason": "within rendering capacity",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "SEL-MEANING",
+          "reason": "judge answered yes",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "SEL-OMISSION",
+          "reason": "judge answered no",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "SEL-RELEVANCE",
+          "reason": "judge answered yes",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "version": "eval-record/1"
+  }
+}

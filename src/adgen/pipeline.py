@@ -18,8 +18,6 @@ from .text import exact_selection, freeze_selection, source_contract
 from .util import atomic_write, canonical, fingerprint, now
 
 INVALID_PLAN = "creative_plan_invalid"
-# Also accept the exception-name codes persisted by earlier versions, so old runs still resume.
-INVALID_PLAN_CODES = {INVALID_PLAN, "ValueError", "ValidationError"}
 SCHEMA_FEEDBACK = {
     "verdict": "reject",
     "reasons": [
@@ -533,7 +531,7 @@ class Pipeline:
                 )
             except StageFailed as exc:
                 # A fresh failure and a persisted one (on resume) take the same single replan.
-                if str(exc) not in INVALID_PLAN_CODES:
+                if str(exc) != INVALID_PLAN:
                     raise
                 if attempt == 2:
                     raise StageFailed(INVALID_PLAN + "_twice") from exc

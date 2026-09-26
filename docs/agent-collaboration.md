@@ -109,3 +109,10 @@
 - Work: reviewed current generation/evaluation code, policy, ranking, reporting and pilot history at commit 441eff7; created root DESIGN.md as a compact draft covering decisions, evidence, challenges, limitations and coding-agent disclosure. Results remain pending and link to the generated submission bundle.
 - Reporting corrections captured: planned set is 9 requests/27 images; older coverage counts are stale; pilot requests informed evaluator/3 and are not held out; no human-label accuracy claim. Documented actual product-count corroboration and OCR failure behavior rather than stronger README shorthand.
 - Validation: checked technical claims against source. No pipeline/config changes, inference, batch restart or report overwrite.
+
+## 2026-09-26 — Batch results and final submission cleanup (Claude Code)
+
+- Human action: Garmit ran the reduced batch (9 requests, 27 images) and built `submission/`. Decision: keep the results as generated, with no further evaluator edits; clean the repository and commit the final submission.
+- Review of results: 27/27 evaluated (`ok`), 20 PASS, 3 FAIL, 4 UNSURE; 8/9 requests have an approved winner. The FAILs were genuine: Gemini rendered internal block IDs "t1/t2/t3" (traced to the prompt's JSON copy format), a "st'ores" typo with a duplicated line, and a pennant flag against the no-flags rule. The 4 UNSUREs are an evaluator limitation: the distinctive-parts question (P5) lists parts that are not visible from a front view, so the judge answers "unknown". Kept as a reported limitation, not fixed.
+- Cleanup: removed agent specs, plans, context bank, runbook, checkpoint log, examples and unused requests; moved the five live-run files the tests use into `tests/fixtures/rayban-live/`; removed references to deleted docs and history comments; dropped legacy resume codes. Kept this log and `docs/decisions.md` as the summarized trace for the coding-agent disclosure.
+- Validation: 124 tests, lint/format, demo; generation and evaluator config fingerprints match all 9 submitted runs (the committed code produced these results); secret scan of `submission/` clean.

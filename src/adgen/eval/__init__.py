@@ -1,1 +1,1 @@
-"""Standalone evaluator: typed evidence, code-composed verdicts, ranking and reports (docs/design/05)."""
+"""Standalone evaluator: typed evidence, code-composed verdicts, ranking and reports."""

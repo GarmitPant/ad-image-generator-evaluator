@@ -1,5 +1,5 @@
-# Evaluator settings. Thresholds are provisional pilot values until dev-set calibration (docs/design/05 §8).
-version = "evaluator/3"  # v2: diagnostic C-REGION; v3: pilot fixes (line overlap, wrap, label exclusion, detector prompt)
+# Evaluator settings. Thresholds are provisional and not yet calibrated against human labels.
+version = "evaluator/3"  # bump when any check, question, threshold or model changes
 judge_effort = "medium"
 
 # Local vision models, loaded offline from the Hugging Face / PaddleX caches at these pins.
@@ -12,7 +12,7 @@ embedder_revision = "ed25f3a31f01632728cabb09d1542f84ab7b0056"
 
 detector_box_threshold = 0.35    # raw detections kept as evidence
 detector_text_threshold = 0.25
-detector_count_threshold = 0.4   # counted instances (pilot: real bottle scored 0.49; wrong-object 0.70, so P1 also needs judge agreement)
+detector_count_threshold = 0.4   # counted product instances; presence also needs LLM-judge agreement
 ocr_confident = 0.8              # at or above: a reading can decide pass/fail
 ocr_noise = 0.5                  # below: treated as noise, recorded only
 line_merge_gap = 0.6             # merge OCR lines into a block if vertical gap <= this x line height

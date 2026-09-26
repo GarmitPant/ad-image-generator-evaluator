@@ -1,0 +1,492 @@
+{
+  "request_id": "b1-12-heineken-ae-summer-exact",
+  "run_id": "f45717d827b34cdd8912750af6aed442",
+  "candidate_id": "f45717d8-c3",
+  "candidate_index": 3,
+  "geography": "AE",
+  "season": "summer",
+  "text_mode": "exact",
+  "status": "evaluated",
+  "error_code": null,
+  "guardrail_status": "approved",
+  "image_artifact": "a0a711f785db788c1df502461d8c0561535f13749829cbcdbad2f84aad49004f",
+  "llm_model": "gpt-6-sol",
+  "image_model": "gemini-3.1-flash-image",
+  "generation_config_version": "generation/2",
+  "evaluator_version": "evaluator/3",
+  "overall_verdict": "fail",
+  "overall_score": 0.9722,
+  "failed_required_checks": 1,
+  "text_selection_verdict": "pass",
+  "text_selection_score": 1.0,
+  "text_rendering_verdict": "pass",
+  "text_rendering_score": 1.0,
+  "product_verdict": "pass",
+  "product_score": 1.0,
+  "context_verdict": "fail",
+  "context_score": 0.8889,
+  "failed_checks": [
+    "context:GR-TOKEN: A small triangular pennant is visible on the background boat's mast."
+  ],
+  "unknown_checks": [],
+  "region_recognisable": "fail",
+  "product": "Beer (alcoholic lager)",
+  "source_text": "Heineken Original\nCold. Crisp. Refreshing.",
+  "selected_copy": [
+    "Heineken Original\nCold. Crisp. Refreshing."
+  ],
+  "dinov2_best_similarity": 0.8981,
+  "execution_status": "ok",
+  "evaluation_errors": [],
+  "winner": false,
+  "approved": false,
+  "generation_latency_s": 37.73,
+  "evaluation_latency_s": 24.75,
+  "generation_cost_usd": 0.082909,
+  "evaluation_cost_usd": 0.01788,
+  "image": "images/b1-12-heineken-ae-summer-exact__f45717d8-c3.png",
+  "evidence": "evidence/b1-12-heineken-ae-summer-exact__f45717d8-c3.json",
+  "evidence_card": "evidence/b1-12-heineken-ae-summer-exact__f45717d8-c3.md",
+  "why_failed": [
+    "No flags; landmarks only in the background: A small triangular pennant is visible on the background boat's mast."
+  ],
+  "unsure_about": [],
+  "evaluation_record": {
+    "context": {
+      "checks": [
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the scene consistent with summer in United Arab Emirates (months [6, 7, 8], northern hemisphere)? Answer no if any visible cue contradicts that season."
+          },
+          "id": "C-SEASON",
+          "reason": "Bright sun and an open waterfront are consistent with a UAE summer; no conflicting seasonal cue is visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image show any of: snow, snowfall, frost, blizzard?"
+          },
+          "id": "C-CONTRA",
+          "reason": "No snow, frost, or snowfall is visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the setting plausible for United Arab Emirates, with nothing that clearly contradicts it?"
+          },
+          "id": "C-SETTING",
+          "reason": "The shaded waterfront, wooden boat, and palm-thatch shelter are plausible in the UAE.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Would a typical viewer recognise this setting as United Arab Emirates (or a specific region of it) from visible cues? Name the cues."
+          },
+          "id": "C-REGION",
+          "reason": "The dhow-style boat and palm-thatch shelter suggest a Gulf waterfront, but no visible cue specifically identifies the UAE.",
+          "required": false,
+          "verdict": "fail"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No racial, national, ethnic or religious caricature of people, and no traditional costume used as shorthand for a country. Regional architecture, materials, textiles and patterns, crafts, food and drink settings, street furniture and native plants are encouraged."
+          },
+          "id": "GR-STEREO",
+          "reason": "No people or traditional costumes are depicted.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does the image violate this rule: No flags or national emblems. Landmarks and skylines may appear only as background context and must never dominate the product."
+          },
+          "id": "GR-TOKEN",
+          "reason": "A small triangular pennant is visible on the background boat's mast.",
+          "required": true,
+          "verdict": "fail"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No religious symbols, sites or ceremonies, including as background decoration."
+          },
+          "id": "GR-RELIGION",
+          "reason": "No religious symbols, sites, or ceremonies are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No visible cues contradicting the resolved seasonal scene policy."
+          },
+          "id": "GR-SEASON",
+          "reason": "The sunny scene has no visible cue contradicting summer.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No identifiable real people. No minors with age-restricted products."
+          },
+          "id": "GR-PEOPLE",
+          "reason": "No people are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: For alcohol: no minors, driving, excessive drinking or health claims."
+          },
+          "id": "GR-ALCOHOL",
+          "reason": "The bottle is displayed alone; no people, driving, or drinking are shown.",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 0.8889,
+      "verdict": "fail"
+    },
+    "errors": [],
+    "evaluator_version": "evaluator/3",
+    "execution_status": "ok",
+    "failed_required_checks": 1,
+    "gates": {
+      "checks": [
+        {
+          "evidence": {
+            "sha256": "a0a711f785db788c1df502461d8c0561535f13749829cbcdbad2f84aad49004f"
+          },
+          "id": "G-DECODE",
+          "reason": "image decodes",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "size": [
+              1024,
+              1024
+            ]
+          },
+          "id": "G-SIZE",
+          "reason": "square and long edge <= 1024",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "guardrail_status": "approved",
+    "image_sha256": "a0a711f785db788c1df502461d8c0561535f13749829cbcdbad2f84aad49004f",
+    "judge_product_count": 1,
+    "latency_s": 24.75,
+    "overall_score": 0.9722,
+    "overall_verdict": "fail",
+    "points": {
+      "fail": 0.0,
+      "pass": 1.0,
+      "unknown": 0.5
+    },
+    "product": {
+      "checks": [
+        {
+          "evidence": {
+            "boxes": [
+              {
+                "box": [
+                  255,
+                  155,
+                  457,
+                  919
+                ],
+                "score": 0.9262
+              }
+            ],
+            "detector_count": 1,
+            "judge_count": 1
+          },
+          "id": "P1",
+          "reason": "judge counted 1, detector counted 1; exactly one required and both must agree",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the product in the FINAL image the same type of product as in the reference images?"
+          },
+          "id": "P2",
+          "reason": "The final image shows a Heineken lager bottle like the references.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does it have the same shape and silhouette as the reference product (a different viewing angle is fine)?"
+          },
+          "id": "P3",
+          "reason": "It has the same capped, long-necked glass-bottle silhouette.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does it have the same colours and materials as the reference product (lighting differences are fine)?"
+          },
+          "id": "P4",
+          "reason": "The green glass and green, white, and red labeling match the references.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Are the reference product's distinctive components preserved: Red star on neck and front label; Vertical Heineken neck branding; Large oval front label? Answer unknown if they are not visible."
+          },
+          "id": "P5",
+          "reason": "Red stars appear on the neck and oval front label, with vertical Heineken branding on the neck.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does the product's own branding/label match the reference (Heineken; HEINEKEN ORIGINAL; PURE MALT LAGER; PREMIUM MALT LAGER; BREWED IN HOLLAND; EST. 1873)? Ignore advertising copy placed around the product. Answer unknown if not legible."
+          },
+          "id": "P6",
+          "reason": "The legible main label reads Heineken Original and Pure Malt Lager; the smallest label text is unclear.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "similarity": {
+              "best": 0.8981,
+              "per_reference": {
+                "09fc3e2357ac7ab896fc7f6a4933631e7d22c487ae00ccc8fea7ccc6451b9389": 0.8385,
+                "64d5afbaff4aa86439599f7fd11bd12b211f69f0cd3f991ce4e63b558797527f": 0.8365,
+                "f1cf185e8cf05c96e144cd171e60da3a91ca77a04ea8fdeb4eb063d9966e5394": 0.8981
+              }
+            }
+          },
+          "id": "P-SIM",
+          "reason": "DINOv2 cosine similarity to the closest reference: 0.8981",
+          "required": false,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "score_definition": "per dimension: mean over required checks (pass 1, unknown 0.5, fail 0); text_rendering: mean max(0, 1-CER) per block; overall: unweighted mean. Ranking only; verdicts gate.",
+    "text_rendering": {
+      "checks": [
+        {
+          "evidence": {
+            "blocks": [
+              {
+                "block_id": "t1",
+                "cer": 0.0,
+                "exact_strict": true,
+                "expected": "Heineken Original\nCold. Crisp. Refreshing.",
+                "min_height_px": 47,
+                "min_score": 0.9988,
+                "observed": "Heineken Original Cold. Crisp. Refreshing.",
+                "reason": "exact (whitespace-equivalent)",
+                "verdict": "pass",
+                "wer": 0.0
+              }
+            ]
+          },
+          "id": "R-BLOCKS",
+          "reason": "all 1 copy block(s) found exactly once",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "duplicates": [],
+            "extra": [],
+            "uncertain": []
+          },
+          "id": "R-EXTRA",
+          "reason": "no unplanned ad text",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "R-LEGIBLE",
+          "reason": "legibility proxy: confident reads and text height >= min_text_height_px (never fails on its own)",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "diagnostics": {
+        "exact_match_rate": 1.0,
+        "ocr_lines": {
+          "ad": [
+            {
+              "box": [
+                639,
+                262,
+                985,
+                309
+              ],
+              "score": 1.0,
+              "text": "Heineken Original"
+            },
+            {
+              "box": [
+                546,
+                311,
+                983,
+                359
+              ],
+              "score": 0.9988,
+              "text": "Cold. Crisp. Refreshing."
+            }
+          ],
+          "noise": [],
+          "product_label": [
+            {
+              "box": [
+                339,
+                265,
+                369,
+                391
+              ],
+              "score": 0.8042,
+              "text": "een"
+            },
+            {
+              "box": [
+                261,
+                537,
+                453,
+                644
+              ],
+              "score": 0.7404,
+              "text": "MNEKEN ORIGIMT"
+            },
+            {
+              "box": [
+                268,
+                652,
+                442,
+                691
+              ],
+              "score": 1.0,
+              "text": "Heineken"
+            },
+            {
+              "box": [
+                255,
+                695,
+                454,
+                823
+              ],
+              "score": 0.6905,
+              "text": "SAURE MAL AS"
+            },
+            {
+              "box": [
+                317,
+                700,
+                394,
+                712
+              ],
+              "score": 0.6635,
+              "text": "L ONUANE DIO"
+            },
+            {
+              "box": [
+                321,
+                709,
+                401,
+                719
+              ],
+              "score": 0.6994,
+              "text": "B TOS IANS "
+            },
+            {
+              "box": [
+                416,
+                711,
+                432,
+                722
+              ],
+              "score": 0.9137,
+              "text": "AIH"
+            }
+          ]
+        }
+      },
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "text_selection": {
+      "checks": [
+        {
+          "evidence": {},
+          "id": "S-SPANS",
+          "reason": "every block is an exact, ordered source span",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "uncovered": []
+          },
+          "id": "S-PROTECTED",
+          "reason": "protected phrases kept whole",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "blocks": 1,
+            "visible_chars": 38,
+            "words": 5
+          },
+          "id": "S-CAPACITY",
+          "reason": "within rendering capacity",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "S-EXACT",
+          "reason": "Exact mode keeps the entire input",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "S-FULL",
+          "reason": "Exact mode: the whole input is the copy; no selection to judge",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "version": "eval-record/1"
+  }
+}

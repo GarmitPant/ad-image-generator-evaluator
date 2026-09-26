@@ -1,6 +1,6 @@
 version: "guardrails/2"
-# v2 (2026-09-26, Garmit): separate stereotyping people and beliefs (banned) from regional style
-# (encouraged) so countries are visually distinguishable. Flags and religious sites stay banned.
+# Stereotyping people and beliefs is banned; regional style (architecture, materials, food, landscape)
+# is encouraged so countries look distinct. Flags and religious imagery are banned.
 global_rules:
   - {id: GR-STEREO, text: "No racial, national, ethnic or religious caricature of people, and no traditional costume used as shorthand for a country. Regional architecture, materials, textiles and patterns, crafts, food and drink settings, street furniture and native plants are encouraged."}
   - {id: GR-TOKEN, text: "No flags or national emblems. Landmarks and skylines may appear only as background context and must never dominate the product."}

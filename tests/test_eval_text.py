@@ -10,7 +10,7 @@ from adgen.text import freeze_selection, source_contract
 
 from .helpers import ROOT
 
-LIVE = ROOT / "data/live-runs/2026-09-26-rayban-au-summer-extract"
+LIVE = ROOT / "tests/fixtures/rayban-live"  # first live run: text plan, context, profile, 2 images
 EVIDENCE = json.loads((ROOT / "tests/fixtures/rayban_live_evidence.json").read_text())
 
 

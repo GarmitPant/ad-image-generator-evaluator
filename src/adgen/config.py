@@ -48,6 +48,6 @@ def config_hash(config, policy):
             "config": config.model_dump(),
             "policy": policy,
             "contracts": "generation/1",
-            "prompts": "generation/2",  # v2: regional-distinctiveness planner instruction
+            "prompts": "generation/2",  # bump when generation prompts change
         }
     )

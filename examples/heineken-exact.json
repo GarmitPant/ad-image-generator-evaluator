@@ -1,9 +1,0 @@
-{
-  "request_id": "heineken-india-summer",
-  "product_images": ["../data/products/heineken-1.jpg", "../data/products/heineken-2.jpg", "../data/products/heineken-3.jpg"],
-  "geography": "IN",
-  "season": "summer",
-  "text": {"mode": "exact", "source_text": "Heineken\nEnjoy responsibly"},
-  "n_candidates": 3,
-  "aspect_ratio": "1:1"
-}

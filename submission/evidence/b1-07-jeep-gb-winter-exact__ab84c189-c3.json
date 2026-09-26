@@ -1,0 +1,420 @@
+{
+  "request_id": "b1-07-jeep-gb-winter-exact",
+  "run_id": "ab84c1892e0b4020a0665ab6acc65772",
+  "candidate_id": "ab84c189-c3",
+  "candidate_index": 3,
+  "geography": "GB",
+  "season": "winter",
+  "text_mode": "exact",
+  "status": "evaluated",
+  "error_code": null,
+  "guardrail_status": "approved",
+  "image_artifact": "431390da576315aa236040c2e1bee1a788edbb7b8b6946158462d7929c57a819",
+  "llm_model": "gpt-6-sol",
+  "image_model": "gemini-3.1-flash-image",
+  "generation_config_version": "generation/2",
+  "evaluator_version": "evaluator/3",
+  "overall_verdict": "unknown",
+  "overall_score": 0.9792,
+  "failed_required_checks": 0,
+  "text_selection_verdict": "pass",
+  "text_selection_score": 1.0,
+  "text_rendering_verdict": "pass",
+  "text_rendering_score": 1.0,
+  "product_verdict": "unknown",
+  "product_score": 0.9167,
+  "context_verdict": "pass",
+  "context_score": 1.0,
+  "failed_checks": [],
+  "unknown_checks": [
+    "product:P5"
+  ],
+  "region_recognisable": "pass",
+  "product": "Four-door off-road SUV",
+  "source_text": "Jeep Wrangler\nEvery road. Every weather.",
+  "selected_copy": [
+    "Jeep Wrangler\nEvery road. Every weather."
+  ],
+  "dinov2_best_similarity": 0.8541,
+  "execution_status": "ok",
+  "evaluation_errors": [],
+  "winner": false,
+  "approved": false,
+  "generation_latency_s": 34.34,
+  "evaluation_latency_s": 22.79,
+  "generation_cost_usd": 0.087287,
+  "evaluation_cost_usd": 0.013714,
+  "image": "images/b1-07-jeep-gb-winter-exact__ab84c189-c3.png",
+  "evidence": "evidence/b1-07-jeep-gb-winter-exact__ab84c189-c3.json",
+  "evidence_card": "evidence/b1-07-jeep-gb-winter-exact__ab84c189-c3.md",
+  "why_failed": [],
+  "unsure_about": [
+    "Distinctive parts preserved: no answer/abstained"
+  ],
+  "evaluation_record": {
+    "context": {
+      "checks": [
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the scene consistent with winter in United Kingdom (months [12, 1, 2], northern hemisphere)? Answer no if any visible cue contradicts that season."
+          },
+          "id": "C-SEASON",
+          "reason": "Bare trees, overcast skies and wet paving are consistent with a UK winter; no contradictory seasonal cues are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the setting plausible for United Kingdom, with nothing that clearly contradicts it?"
+          },
+          "id": "C-SETTING",
+          "reason": "The seaside promenade, beach huts and terraces are plausible in the UK.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Would a typical viewer recognise this setting as United Kingdom (or a specific region of it) from visible cues? Name the cues."
+          },
+          "id": "C-REGION",
+          "reason": "Pebble beach, pastel beach huts, ornate seafront railings and Regency-style terraces evoke a UK seaside town.",
+          "required": false,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No racial, national, ethnic or religious caricature of people, and no traditional costume used as shorthand for a country. Regional architecture, materials, textiles and patterns, crafts, food and drink settings, street furniture and native plants are encouraged."
+          },
+          "id": "GR-STEREO",
+          "reason": "No caricatures or traditional costumes are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No flags or national emblems. Landmarks and skylines may appear only as background context and must never dominate the product."
+          },
+          "id": "GR-TOKEN",
+          "reason": "No flags or national emblems are visible; the background buildings do not dominate the vehicle.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No religious symbols, sites or ceremonies, including as background decoration."
+          },
+          "id": "GR-RELIGION",
+          "reason": "No religious symbols, sites or ceremonies are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No visible cues contradicting the resolved seasonal scene policy."
+          },
+          "id": "GR-SEASON",
+          "reason": "The bare trees and wet, overcast promenade do not contradict winter.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No identifiable real people. No minors with age-restricted products."
+          },
+          "id": "GR-PEOPLE",
+          "reason": "No identifiable people or minors are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: For alcohol: no minors, driving, excessive drinking or health claims."
+          },
+          "id": "GR-ALCOHOL",
+          "reason": "No alcohol or drinking is visible.",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "errors": [],
+    "evaluator_version": "evaluator/3",
+    "execution_status": "ok",
+    "failed_required_checks": 0,
+    "gates": {
+      "checks": [
+        {
+          "evidence": {
+            "sha256": "431390da576315aa236040c2e1bee1a788edbb7b8b6946158462d7929c57a819"
+          },
+          "id": "G-DECODE",
+          "reason": "image decodes",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "size": [
+              1024,
+              1024
+            ]
+          },
+          "id": "G-SIZE",
+          "reason": "square and long edge <= 1024",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "guardrail_status": "approved",
+    "image_sha256": "431390da576315aa236040c2e1bee1a788edbb7b8b6946158462d7929c57a819",
+    "judge_product_count": 1,
+    "latency_s": 22.79,
+    "overall_score": 0.9792,
+    "overall_verdict": "unknown",
+    "points": {
+      "fail": 0.0,
+      "pass": 1.0,
+      "unknown": 0.5
+    },
+    "product": {
+      "checks": [
+        {
+          "evidence": {
+            "boxes": [
+              {
+                "box": [
+                  148,
+                  375,
+                  882,
+                  845
+                ],
+                "score": 0.7365
+              }
+            ],
+            "detector_count": 1,
+            "judge_count": 1
+          },
+          "id": "P1",
+          "reason": "judge counted 1, detector counted 1; exactly one required and both must agree",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the product in the FINAL image the same type of product as in the reference images?"
+          },
+          "id": "P2",
+          "reason": "The vehicle is a four-door Jeep Wrangler-style off-road SUV.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does it have the same shape and silhouette as the reference product (a different viewing angle is fine)?"
+          },
+          "id": "P3",
+          "reason": "Its boxy four-door body, upright grille, raised stance and large tires match the reference silhouette.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does it have the same colours and materials as the reference product (lighting differences are fine)?"
+          },
+          "id": "P4",
+          "reason": "It has matching black bodywork, dark trim and off-road tires.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "question": "Are the reference product's distinctive components preserved: Seven-slot front grille; Round headlights; Four side doors; Exposed door hinges; Large off-road tires; Side steps or rock rails; External spare-tire-style rear profile not visible? Answer unknown if they are not visible."
+          },
+          "id": "P5",
+          "reason": "no answer/abstained",
+          "required": true,
+          "verdict": "unknown"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does the product's own branding/label match the reference (Jeep; BFGoodrich)? Ignore advertising copy placed around the product. Answer unknown if not legible."
+          },
+          "id": "P6",
+          "reason": "The Jeep badge on the grille and BFGoodrich lettering on the front tire are legible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "similarity": {
+              "best": 0.8541,
+              "per_reference": {
+                "8ff3e3db518a7dc24843cb6ccf639b312fa18d164dd03bc2be70a606a0a217ad": 0.8541,
+                "fb61d3f7a2a126966095378827dc606a980cc11003e1c816e06366ae5bcbef2e": 0.8487
+              }
+            }
+          },
+          "id": "P-SIM",
+          "reason": "DINOv2 cosine similarity to the closest reference: 0.8541",
+          "required": false,
+          "verdict": "pass"
+        }
+      ],
+      "score": 0.9167,
+      "verdict": "unknown"
+    },
+    "score_definition": "per dimension: mean over required checks (pass 1, unknown 0.5, fail 0); text_rendering: mean max(0, 1-CER) per block; overall: unweighted mean. Ranking only; verdicts gate.",
+    "text_rendering": {
+      "checks": [
+        {
+          "evidence": {
+            "blocks": [
+              {
+                "block_id": "t1",
+                "cer": 0.0,
+                "exact_strict": true,
+                "expected": "Jeep Wrangler\nEvery road. Every weather.",
+                "min_height_px": 44,
+                "min_score": 1.0,
+                "observed": "Jeep Wrangler Every road. Every weather.",
+                "reason": "exact (whitespace-equivalent)",
+                "verdict": "pass",
+                "wer": 0.0
+              }
+            ]
+          },
+          "id": "R-BLOCKS",
+          "reason": "all 1 copy block(s) found exactly once",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "duplicates": [],
+            "extra": [],
+            "uncertain": []
+          },
+          "id": "R-EXTRA",
+          "reason": "no unplanned ad text",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "R-LEGIBLE",
+          "reason": "legibility proxy: confident reads and text height >= min_text_height_px (never fails on its own)",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "diagnostics": {
+        "exact_match_rate": 1.0,
+        "ocr_lines": {
+          "ad": [
+            {
+              "box": [
+                634,
+                142,
+                920,
+                187
+              ],
+              "score": 1.0,
+              "text": "Jeep Wrangler"
+            },
+            {
+              "box": [
+                451,
+                189,
+                918,
+                233
+              ],
+              "score": 1.0,
+              "text": "Every road. Every weather."
+            }
+          ],
+          "noise": [],
+          "product_label": [
+            {
+              "box": [
+                305,
+                532,
+                336,
+                549
+              ],
+              "score": 1.0,
+              "text": "Jeep"
+            }
+          ]
+        }
+      },
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "text_selection": {
+      "checks": [
+        {
+          "evidence": {},
+          "id": "S-SPANS",
+          "reason": "every block is an exact, ordered source span",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "uncovered": []
+          },
+          "id": "S-PROTECTED",
+          "reason": "protected phrases kept whole",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "blocks": 1,
+            "visible_chars": 35,
+            "words": 6
+          },
+          "id": "S-CAPACITY",
+          "reason": "within rendering capacity",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "S-EXACT",
+          "reason": "Exact mode keeps the entire input",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "S-FULL",
+          "reason": "Exact mode: the whole input is the copy; no selection to judge",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "version": "eval-record/1"
+  }
+}

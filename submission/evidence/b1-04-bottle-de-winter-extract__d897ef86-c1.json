@@ -1,0 +1,448 @@
+{
+  "request_id": "b1-04-bottle-de-winter-extract",
+  "run_id": "d897ef8643ec47c4a54884503c3a2fb8",
+  "candidate_id": "d897ef86-c1",
+  "candidate_index": 1,
+  "geography": "DE",
+  "season": "winter",
+  "text_mode": "extract",
+  "status": "evaluated",
+  "error_code": null,
+  "guardrail_status": "approved",
+  "image_artifact": "3c0edf8b7fdbe8f5b04acacf341c458a68c1d7325dc9d8906c21693e479dbbbb",
+  "llm_model": "gpt-6-sol",
+  "image_model": "gemini-3.1-flash-image",
+  "generation_config_version": "generation/2",
+  "evaluator_version": "evaluator/3",
+  "overall_verdict": "pass",
+  "overall_score": 1.0,
+  "failed_required_checks": 0,
+  "text_selection_verdict": "pass",
+  "text_selection_score": 1.0,
+  "text_rendering_verdict": "pass",
+  "text_rendering_score": 1.0,
+  "product_verdict": "pass",
+  "product_score": 1.0,
+  "context_verdict": "pass",
+  "context_score": 1.0,
+  "failed_checks": [],
+  "unknown_checks": [],
+  "region_recognisable": "pass",
+  "product": "Reusable bottle",
+  "source_text": "Our insulated steel bottle keeps drinks hot for 12 hours and cold for 24 hours. Leak-proof lid. Not dishwasher safe. Available in forest green.",
+  "selected_copy": [
+    "Our insulated steel bottle keeps drinks hot for 12 hours and cold for 24 hours.",
+    "Leak-proof lid.",
+    "Not dishwasher safe."
+  ],
+  "dinov2_best_similarity": 0.5683,
+  "execution_status": "ok",
+  "evaluation_errors": [],
+  "winner": false,
+  "approved": false,
+  "generation_latency_s": 29.43,
+  "evaluation_latency_s": 24.82,
+  "generation_cost_usd": 0.084999,
+  "evaluation_cost_usd": 0.01024,
+  "image": "images/b1-04-bottle-de-winter-extract__d897ef86-c1.png",
+  "evidence": "evidence/b1-04-bottle-de-winter-extract__d897ef86-c1.json",
+  "evidence_card": "evidence/b1-04-bottle-de-winter-extract__d897ef86-c1.md",
+  "why_failed": [],
+  "unsure_about": [],
+  "evaluation_record": {
+    "context": {
+      "checks": [
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the scene consistent with winter in Germany (months [12, 1, 2], northern hemisphere)? Answer no if any visible cue contradicts that season."
+          },
+          "id": "C-SEASON",
+          "reason": "Snow along the canal and leafless trees are consistent with winter.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the setting plausible for Germany, with nothing that clearly contradicts it?"
+          },
+          "id": "C-SETTING",
+          "reason": "The brick warehouses, canal, cobblestones, and pretzel are plausible in Germany.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Would a typical viewer recognise this setting as Germany (or a specific region of it) from visible cues? Name the cues."
+          },
+          "id": "C-REGION",
+          "reason": "A pretzel, cobblestones, and red-brick canal-side warehouses suggest a German setting.",
+          "required": false,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No racial, national, ethnic or religious caricature of people, and no traditional costume used as shorthand for a country. Regional architecture, materials, textiles and patterns, crafts, food and drink settings, street furniture and native plants are encouraged."
+          },
+          "id": "GR-STEREO",
+          "reason": "No people or costumes are visible; the scene uses architecture and food as setting cues.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No flags or national emblems. Landmarks and skylines may appear only as background context and must never dominate the product."
+          },
+          "id": "GR-TOKEN",
+          "reason": "No flags or national emblems are visible, and the buildings remain in the background.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No religious symbols, sites or ceremonies, including as background decoration."
+          },
+          "id": "GR-RELIGION",
+          "reason": "No religious symbols, sites, or ceremonies are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No visible cues contradicting the resolved seasonal scene policy."
+          },
+          "id": "GR-SEASON",
+          "reason": "Snow and bare trees support the winter setting; no contradictory seasonal cues are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No identifiable real people. No minors with age-restricted products."
+          },
+          "id": "GR-PEOPLE",
+          "reason": "No people are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: For alcohol: no minors, driving, excessive drinking or health claims."
+          },
+          "id": "GR-ALCOHOL",
+          "reason": "The image shows a reusable bottle, with no visible alcohol, drinking, minors, or driving.",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "errors": [],
+    "evaluator_version": "evaluator/3",
+    "execution_status": "ok",
+    "failed_required_checks": 0,
+    "gates": {
+      "checks": [
+        {
+          "evidence": {
+            "sha256": "3c0edf8b7fdbe8f5b04acacf341c458a68c1d7325dc9d8906c21693e479dbbbb"
+          },
+          "id": "G-DECODE",
+          "reason": "image decodes",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "size": [
+              1024,
+              1024
+            ]
+          },
+          "id": "G-SIZE",
+          "reason": "square and long edge <= 1024",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "guardrail_status": "approved",
+    "image_sha256": "3c0edf8b7fdbe8f5b04acacf341c458a68c1d7325dc9d8906c21693e479dbbbb",
+    "judge_product_count": 1,
+    "latency_s": 24.81,
+    "overall_score": 1.0,
+    "overall_verdict": "pass",
+    "points": {
+      "fail": 0.0,
+      "pass": 1.0,
+      "unknown": 0.5
+    },
+    "product": {
+      "checks": [
+        {
+          "evidence": {
+            "boxes": [
+              {
+                "box": [
+                  409,
+                  278,
+                  614,
+                  904
+                ],
+                "score": 0.9218
+              }
+            ],
+            "detector_count": 1,
+            "judge_count": 1
+          },
+          "id": "P1",
+          "reason": "judge counted 1, detector counted 1; exactly one required and both must agree",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the product in the FINAL image the same type of product as in the reference images?"
+          },
+          "id": "P2",
+          "reason": "The final image shows the same type of reusable bottle.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does it have the same shape and silhouette as the reference product (a different viewing angle is fine)?"
+          },
+          "id": "P3",
+          "reason": "Its cylindrical body, rounded shoulders, and flat cap match the reference silhouette.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does it have the same colours and materials as the reference product (lighting differences are fine)?"
+          },
+          "id": "P4",
+          "reason": "The bottle has the same matte dark-green appearance.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Are the reference product's distinctive components preserved: Matching green cap; Narrow dark band below the cap; Faint seam around the lower portion of the bottle? Answer unknown if they are not visible."
+          },
+          "id": "P5",
+          "reason": "The green cap, narrow dark band beneath it, and faint seam near the bottle's base are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "similarity": {
+              "best": 0.5683,
+              "per_reference": {
+                "ce253624931d1402c3bf7251e6ad0a649ed9c9b0ee6c7a2c2a8c23e1c85caf3e": 0.5683
+              }
+            }
+          },
+          "id": "P-SIM",
+          "reason": "DINOv2 cosine similarity to the closest reference: 0.5683",
+          "required": false,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "score_definition": "per dimension: mean over required checks (pass 1, unknown 0.5, fail 0); text_rendering: mean max(0, 1-CER) per block; overall: unweighted mean. Ranking only; verdicts gate.",
+    "text_rendering": {
+      "checks": [
+        {
+          "evidence": {
+            "blocks": [
+              {
+                "block_id": "t1",
+                "cer": 0.0,
+                "exact_strict": false,
+                "expected": "Our insulated steel bottle keeps drinks hot for 12 hours and cold for 24 hours.",
+                "min_height_px": 51,
+                "min_score": 1.0,
+                "observed": "Our insulated steel bottle keeps drinks hot for 12 hours and cold for 24 hours.",
+                "reason": "exact (whitespace-equivalent)",
+                "verdict": "pass",
+                "wer": 0.0
+              },
+              {
+                "block_id": "t2",
+                "cer": 0.0,
+                "exact_strict": true,
+                "expected": "Leak-proof lid.",
+                "min_height_px": 58,
+                "min_score": 0.9999,
+                "observed": "Leak-proof lid.",
+                "reason": "exact (whitespace-equivalent)",
+                "verdict": "pass",
+                "wer": 0.0
+              },
+              {
+                "block_id": "t3",
+                "cer": 0.0,
+                "exact_strict": true,
+                "expected": "Not dishwasher safe.",
+                "min_height_px": 34,
+                "min_score": 1.0,
+                "observed": "Not dishwasher safe.",
+                "reason": "exact (whitespace-equivalent)",
+                "verdict": "pass",
+                "wer": 0.0
+              }
+            ]
+          },
+          "id": "R-BLOCKS",
+          "reason": "all 3 copy block(s) found exactly once",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "duplicates": [],
+            "extra": [],
+            "uncertain": []
+          },
+          "id": "R-EXTRA",
+          "reason": "no unplanned ad text",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "R-LEGIBLE",
+          "reason": "legibility proxy: confident reads and text height >= min_text_height_px (never fails on its own)",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "diagnostics": {
+        "exact_match_rate": 1.0,
+        "ocr_lines": {
+          "ad": [
+            {
+              "box": [
+                47,
+                47,
+                975,
+                103
+              ],
+              "score": 1.0,
+              "text": "Our insulated steel bottle keeps drinks"
+            },
+            {
+              "box": [
+                53,
+                112,
+                970,
+                163
+              ],
+              "score": 1.0,
+              "text": "hot for 12 hours and cold for 24 hours."
+            },
+            {
+              "box": [
+                28,
+                940,
+                381,
+                998
+              ],
+              "score": 0.9999,
+              "text": "Leak-proof lid."
+            },
+            {
+              "box": [
+                672,
+                970,
+                997,
+                1004
+              ],
+              "score": 1.0,
+              "text": "Not dishwasher safe."
+            }
+          ],
+          "noise": [],
+          "product_label": []
+        }
+      },
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "text_selection": {
+      "checks": [
+        {
+          "evidence": {},
+          "id": "S-SPANS",
+          "reason": "every block is an exact, ordered source span",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "uncovered": []
+          },
+          "id": "S-PROTECTED",
+          "reason": "protected phrases kept whole",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "blocks": 3,
+            "visible_chars": 97,
+            "words": 20
+          },
+          "id": "S-CAPACITY",
+          "reason": "within rendering capacity",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "SEL-MEANING",
+          "reason": "judge answered yes",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "SEL-OMISSION",
+          "reason": "judge answered no",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "SEL-RELEVANCE",
+          "reason": "judge answered yes",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "version": "eval-record/1"
+  }
+}

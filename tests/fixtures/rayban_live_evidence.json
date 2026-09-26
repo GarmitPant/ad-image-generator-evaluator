@@ -1,5 +1,5 @@
 {
- "source": "Recorded 2026-09-26 with LocalVision (PP-OCRv6 medium; grounding-dino-tiny a2bb814d) on the live Ray-Ban candidates in data/live-runs/2026-09-26-rayban-au-summer-extract. Genuine evidence, not synthetic.",
+ "source": "Recorded 2026-09-26 with LocalVision (PP-OCRv6 medium; grounding-dino-tiny a2bb814d) on the live Ray-Ban candidates in tests/fixtures/rayban-live/. Genuine evidence, not synthetic.",
  "candidates": {
   "c1": {
    "ocr": {

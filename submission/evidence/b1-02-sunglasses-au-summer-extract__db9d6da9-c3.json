@@ -1,0 +1,489 @@
+{
+  "request_id": "b1-02-sunglasses-au-summer-extract",
+  "run_id": "db9d6da92eb14b98897718abc0c19806",
+  "candidate_id": "db9d6da9-c3",
+  "candidate_index": 3,
+  "geography": "AU",
+  "season": "summer",
+  "text_mode": "extract",
+  "status": "evaluated",
+  "error_code": null,
+  "guardrail_status": "approved",
+  "image_artifact": "65e0b9d20fd553b55f14b96457b16efe9010eb7f0bcb5ee27c7f290c4ba80c88",
+  "llm_model": "gpt-6-sol",
+  "image_model": "gemini-3.1-flash-image",
+  "generation_config_version": "generation/2",
+  "evaluator_version": "evaluator/3",
+  "overall_verdict": "pass",
+  "overall_score": 1.0,
+  "failed_required_checks": 0,
+  "text_selection_verdict": "pass",
+  "text_selection_score": 1.0,
+  "text_rendering_verdict": "pass",
+  "text_rendering_score": 1.0,
+  "product_verdict": "pass",
+  "product_score": 1.0,
+  "context_verdict": "pass",
+  "context_score": 1.0,
+  "failed_checks": [],
+  "unknown_checks": [],
+  "region_recognisable": "pass",
+  "product": "Sunglasses",
+  "source_text": "Meet our classic black frames, back in stock for the new season. Polarized lenses. Built for bright days. Each pair ships with a hard case and a microfibre cloth. Free returns within 30 days on all orders placed online.",
+  "selected_copy": [
+    "classic black frames",
+    "Polarized lenses. Built for bright days.",
+    "Free returns within 30 days on all orders placed online."
+  ],
+  "dinov2_best_similarity": 0.887,
+  "execution_status": "ok",
+  "evaluation_errors": [],
+  "winner": false,
+  "approved": false,
+  "generation_latency_s": 44.91,
+  "evaluation_latency_s": 20.46,
+  "generation_cost_usd": 0.100637,
+  "evaluation_cost_usd": 0.025172,
+  "image": "images/b1-02-sunglasses-au-summer-extract__db9d6da9-c3.png",
+  "evidence": "evidence/b1-02-sunglasses-au-summer-extract__db9d6da9-c3.json",
+  "evidence_card": "evidence/b1-02-sunglasses-au-summer-extract__db9d6da9-c3.md",
+  "why_failed": [],
+  "unsure_about": [],
+  "evaluation_record": {
+    "context": {
+      "checks": [
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the scene consistent with summer in Australia (months [12, 1, 2], southern hemisphere)? Answer no if any visible cue contradicts that season."
+          },
+          "id": "C-SEASON",
+          "reason": "Bright sunlight, flowering plants and the absence of cold-weather cues are consistent with an Australian summer.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image show any of: snow, snowfall, frost, blizzard?"
+          },
+          "id": "C-CONTRA",
+          "reason": "No snow, frost or snowfall is visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the setting plausible for Australia, with nothing that clearly contradicts it?"
+          },
+          "id": "C-SETTING",
+          "reason": "The house, timber surface and garden are plausible in Australia; nothing visibly contradicts the setting.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Would a typical viewer recognise this setting as Australia (or a specific region of it) from visible cues? Name the cues."
+          },
+          "id": "C-REGION",
+          "reason": "Red bottlebrush flowers and a raised, veranda-fronted house with a corrugated roof are recognisable Australian cues.",
+          "required": false,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No racial, national, ethnic or religious caricature of people, and no traditional costume used as shorthand for a country. Regional architecture, materials, textiles and patterns, crafts, food and drink settings, street furniture and native plants are encouraged."
+          },
+          "id": "GR-STEREO",
+          "reason": "No people or caricatures are shown; the regional cues are plants and architecture.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No flags or national emblems. Landmarks and skylines may appear only as background context and must never dominate the product."
+          },
+          "id": "GR-TOKEN",
+          "reason": "No flags or national emblems are visible, and no landmark dominates the product.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No religious symbols, sites or ceremonies, including as background decoration."
+          },
+          "id": "GR-RELIGION",
+          "reason": "No religious symbols, sites or ceremonies are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No visible cues contradicting the resolved seasonal scene policy."
+          },
+          "id": "GR-SEASON",
+          "reason": "The sunny, flowering scene has no visible cue contradicting summer.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No identifiable real people. No minors with age-restricted products."
+          },
+          "id": "GR-PEOPLE",
+          "reason": "No people are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: For alcohol: no minors, driving, excessive drinking or health claims."
+          },
+          "id": "GR-ALCOHOL",
+          "reason": "No alcohol or drinking is shown.",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "errors": [],
+    "evaluator_version": "evaluator/3",
+    "execution_status": "ok",
+    "failed_required_checks": 0,
+    "gates": {
+      "checks": [
+        {
+          "evidence": {
+            "sha256": "65e0b9d20fd553b55f14b96457b16efe9010eb7f0bcb5ee27c7f290c4ba80c88"
+          },
+          "id": "G-DECODE",
+          "reason": "image decodes",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "size": [
+              1024,
+              1024
+            ]
+          },
+          "id": "G-SIZE",
+          "reason": "square and long edge <= 1024",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "guardrail_status": "approved",
+    "image_sha256": "65e0b9d20fd553b55f14b96457b16efe9010eb7f0bcb5ee27c7f290c4ba80c88",
+    "judge_product_count": 1,
+    "latency_s": 20.45,
+    "overall_score": 1.0,
+    "overall_verdict": "pass",
+    "points": {
+      "fail": 0.0,
+      "pass": 1.0,
+      "unknown": 0.5
+    },
+    "product": {
+      "checks": [
+        {
+          "evidence": {
+            "boxes": [
+              {
+                "box": [
+                  384,
+                  518,
+                  968,
+                  707
+                ],
+                "score": 0.9659
+              }
+            ],
+            "detector_count": 1,
+            "judge_count": 1
+          },
+          "id": "P1",
+          "reason": "judge counted 1, detector counted 1; exactly one required and both must agree",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the product in the FINAL image the same type of product as in the reference images?"
+          },
+          "id": "P2",
+          "reason": "The final image shows a pair of sunglasses like the reference.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does it have the same shape and silhouette as the reference product (a different viewing angle is fine)?"
+          },
+          "id": "P3",
+          "reason": "The thick, slightly upswept frame and rectangular rounded lenses match the reference silhouette.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does it have the same colours and materials as the reference product (lighting differences are fine)?"
+          },
+          "id": "P4",
+          "reason": "The glasses have glossy black frames and dark tinted lenses.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Are the reference product's distinctive components preserved: two tinted lenses; integrated nose bridge; small oval accents near the outer frame corners; curved temple tips? Answer unknown if they are not visible."
+          },
+          "id": "P5",
+          "reason": "Two tinted lenses, an integrated bridge, small oval corner accents and a curved visible temple tip are present.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does the product's own branding/label match the reference (Ray-Ban P; Ray-Ban)? Ignore advertising copy placed around the product. Answer unknown if not legible."
+          },
+          "id": "P6",
+          "reason": "The lens bears a small Ray-Ban P mark, and Ray-Ban branding appears on the temple.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "similarity": {
+              "best": 0.887,
+              "per_reference": {
+                "feab6c41810865a9bf9d0229580789a303760085da08cd378b1de7eb3d25ea46": 0.887
+              }
+            }
+          },
+          "id": "P-SIM",
+          "reason": "DINOv2 cosine similarity to the closest reference: 0.887",
+          "required": false,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "score_definition": "per dimension: mean over required checks (pass 1, unknown 0.5, fail 0); text_rendering: mean max(0, 1-CER) per block; overall: unweighted mean. Ranking only; verdicts gate.",
+    "text_rendering": {
+      "checks": [
+        {
+          "evidence": {
+            "blocks": [
+              {
+                "block_id": "t1",
+                "cer": 0.0,
+                "exact_strict": false,
+                "expected": "classic black frames",
+                "min_height_px": 105,
+                "min_score": 1.0,
+                "observed": "classic black frames",
+                "reason": "exact (whitespace-equivalent)",
+                "verdict": "pass",
+                "wer": 0.0
+              },
+              {
+                "block_id": "t2",
+                "cer": 0.0,
+                "exact_strict": false,
+                "expected": "Polarized lenses. Built for bright days.",
+                "min_height_px": 47,
+                "min_score": 0.9995,
+                "observed": "Polarized lenses. Built for bright days.",
+                "reason": "exact (whitespace-equivalent)",
+                "verdict": "pass",
+                "wer": 0.0
+              },
+              {
+                "block_id": "t3",
+                "cer": 0.0,
+                "exact_strict": true,
+                "expected": "Free returns within 30 days on all orders placed online.",
+                "min_height_px": 45,
+                "min_score": 0.9958,
+                "observed": "Free returns within 30 days on all orders placed online.",
+                "reason": "exact (whitespace-equivalent)",
+                "verdict": "pass",
+                "wer": 0.0
+              }
+            ]
+          },
+          "id": "R-BLOCKS",
+          "reason": "all 3 copy block(s) found exactly once",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "duplicates": [],
+            "extra": [],
+            "uncertain": []
+          },
+          "id": "R-EXTRA",
+          "reason": "no unplanned ad text",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "R-LEGIBLE",
+          "reason": "legibility proxy: confident reads and text height >= min_text_height_px (never fails on its own)",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "diagnostics": {
+        "exact_match_rate": 1.0,
+        "ocr_lines": {
+          "ad": [
+            {
+              "box": [
+                60,
+                56,
+                738,
+                166
+              ],
+              "score": 1.0,
+              "text": "classic black"
+            },
+            {
+              "box": [
+                61,
+                161,
+                442,
+                266
+              ],
+              "score": 1.0,
+              "text": "frames"
+            },
+            {
+              "box": [
+                67,
+                356,
+                412,
+                403
+              ],
+              "score": 0.9995,
+              "text": "Polarized lenses."
+            },
+            {
+              "box": [
+                66,
+                407,
+                474,
+                458
+              ],
+              "score": 1.0,
+              "text": "Built for bright days."
+            },
+            {
+              "box": [
+                62,
+                959,
+                956,
+                1004
+              ],
+              "score": 0.9958,
+              "text": "Free returns within 30 days on all orders placed online."
+            }
+          ],
+          "noise": [],
+          "product_label": [
+            {
+              "box": [
+                826,
+                563,
+                857,
+                589
+              ],
+              "score": 0.6776,
+              "text": "Byyfon"
+            }
+          ]
+        }
+      },
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "text_selection": {
+      "checks": [
+        {
+          "evidence": {},
+          "id": "S-SPANS",
+          "reason": "every block is an exact, ordered source span",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "uncovered": []
+          },
+          "id": "S-PROTECTED",
+          "reason": "protected phrases kept whole",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "blocks": 3,
+            "visible_chars": 100,
+            "words": 19
+          },
+          "id": "S-CAPACITY",
+          "reason": "within rendering capacity",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "SEL-MEANING",
+          "reason": "judge answered yes",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "SEL-OMISSION",
+          "reason": "judge answered no",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "SEL-RELEVANCE",
+          "reason": "judge answered yes",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "version": "eval-record/1"
+  }
+}

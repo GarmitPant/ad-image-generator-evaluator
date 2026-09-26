@@ -28,4 +28,3 @@ Photo pages: `https://unsplash.com/photos/<photo id>`.
 ## Limitations
 
 - The Unsplash licence covers the photographs, not the trademarks shown (Heineken, Modelo, Ray-Ban). Generated ads that use these brands are research demonstrations, not brand-authorized creative. State this in the write-up.
-- `heineken-3.jpg` is about 42.2 MP. That exceeds the proposed 40 MP input limit in `docs/design/01-generation-pipeline.md` §3A, so that limit needs revisiting or the image needs an explicit pre-downscale step.

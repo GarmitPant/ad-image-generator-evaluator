@@ -13,7 +13,6 @@ runs/
 
 # Curated golden images, human labels and offline evaluation fixtures are
 # intended submission artifacts; do not blanket-ignore data/ or reports/.
-outputs/
 
 *.egg-info/
 build/

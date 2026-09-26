@@ -1,0 +1,429 @@
+{
+  "request_id": "b1-18-jeep-us-summer-exact",
+  "run_id": "05359b9023794fc499c59a87da12ef9a",
+  "candidate_id": "05359b90-c1",
+  "candidate_index": 1,
+  "geography": "US",
+  "season": "summer",
+  "text_mode": "exact",
+  "status": "evaluated",
+  "error_code": null,
+  "guardrail_status": "approved",
+  "image_artifact": "4373393314809c4e0b220e74c572cb710cf64f06df8670ceb8935227e33403d3",
+  "llm_model": "gpt-6-sol",
+  "image_model": "gemini-3.1-flash-image",
+  "generation_config_version": "generation/2",
+  "evaluator_version": "evaluator/3",
+  "overall_verdict": "unknown",
+  "overall_score": 0.9792,
+  "failed_required_checks": 0,
+  "text_selection_verdict": "pass",
+  "text_selection_score": 1.0,
+  "text_rendering_verdict": "pass",
+  "text_rendering_score": 1.0,
+  "product_verdict": "unknown",
+  "product_score": 0.9167,
+  "context_verdict": "pass",
+  "context_score": 1.0,
+  "failed_checks": [],
+  "unknown_checks": [
+    "product:P5"
+  ],
+  "region_recognisable": "pass",
+  "product": "SUV / off-road vehicle",
+  "source_text": "Summer is calling.\nAnswer it off-road.",
+  "selected_copy": [
+    "Summer is calling.\nAnswer it off-road."
+  ],
+  "dinov2_best_similarity": 0.8903,
+  "execution_status": "ok",
+  "evaluation_errors": [],
+  "winner": true,
+  "approved": false,
+  "generation_latency_s": 28.16,
+  "evaluation_latency_s": 22.54,
+  "generation_cost_usd": 0.083126,
+  "evaluation_cost_usd": 0.012296,
+  "image": "images/b1-18-jeep-us-summer-exact__05359b90-c1.png",
+  "evidence": "evidence/b1-18-jeep-us-summer-exact__05359b90-c1.json",
+  "evidence_card": "evidence/b1-18-jeep-us-summer-exact__05359b90-c1.md",
+  "why_failed": [],
+  "unsure_about": [
+    "Distinctive parts preserved: no answer/abstained"
+  ],
+  "evaluation_record": {
+    "context": {
+      "checks": [
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the scene consistent with summer in United States (months [6, 7, 8], northern hemisphere)? Answer no if any visible cue contradicts that season."
+          },
+          "id": "C-SEASON",
+          "reason": "Green foliage, flowers, and a sunlit, snow-free courtyard are consistent with summer.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image show any of: snow, snowfall, frost, blizzard?"
+          },
+          "id": "C-CONTRA",
+          "reason": "No snow, frost, or snowfall is visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the setting plausible for United States, with nothing that clearly contradicts it?"
+          },
+          "id": "C-SETTING",
+          "reason": "The southwestern-style courtyard is plausible in the United States; nothing visible clearly contradicts it.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Would a typical viewer recognise this setting as United States (or a specific region of it) from visible cues? Name the cues."
+          },
+          "id": "C-REGION",
+          "reason": "The adobe-style building, turquoise door, and courtyard suggest the southwestern United States.",
+          "required": false,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No racial, national, ethnic or religious caricature of people, and no traditional costume used as shorthand for a country. Regional architecture, materials, textiles and patterns, crafts, food and drink settings, street furniture and native plants are encouraged."
+          },
+          "id": "GR-STEREO",
+          "reason": "No people or caricatures are depicted; the regional cues are architectural and decorative.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No flags or national emblems. Landmarks and skylines may appear only as background context and must never dominate the product."
+          },
+          "id": "GR-TOKEN",
+          "reason": "No flags or national emblems are visible, and no landmark dominates the product.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No religious symbols, sites or ceremonies, including as background decoration."
+          },
+          "id": "GR-RELIGION",
+          "reason": "No clear religious symbols, sites, or ceremonies are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No visible cues contradicting the resolved seasonal scene policy."
+          },
+          "id": "GR-SEASON",
+          "reason": "The greenery and snow-free setting do not contradict summer.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: No identifiable real people. No minors with age-restricted products."
+          },
+          "id": "GR-PEOPLE",
+          "reason": "No people are visible.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "no",
+            "question": "Does the image violate this rule: For alcohol: no minors, driving, excessive drinking or health claims."
+          },
+          "id": "GR-ALCOHOL",
+          "reason": "No alcohol or drinking is visible.",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "errors": [],
+    "evaluator_version": "evaluator/3",
+    "execution_status": "ok",
+    "failed_required_checks": 0,
+    "gates": {
+      "checks": [
+        {
+          "evidence": {
+            "sha256": "4373393314809c4e0b220e74c572cb710cf64f06df8670ceb8935227e33403d3"
+          },
+          "id": "G-DECODE",
+          "reason": "image decodes",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "size": [
+              1024,
+              1024
+            ]
+          },
+          "id": "G-SIZE",
+          "reason": "square and long edge <= 1024",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "guardrail_status": "approved",
+    "image_sha256": "4373393314809c4e0b220e74c572cb710cf64f06df8670ceb8935227e33403d3",
+    "judge_product_count": 1,
+    "latency_s": 22.54,
+    "overall_score": 0.9792,
+    "overall_verdict": "unknown",
+    "points": {
+      "fail": 0.0,
+      "pass": 1.0,
+      "unknown": 0.5
+    },
+    "product": {
+      "checks": [
+        {
+          "evidence": {
+            "boxes": [
+              {
+                "box": [
+                  198,
+                  320,
+                  884,
+                  771
+                ],
+                "score": 0.6713
+              }
+            ],
+            "detector_count": 1,
+            "judge_count": 1
+          },
+          "id": "P1",
+          "reason": "judge counted 1, detector counted 1; exactly one required and both must agree",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Is the product in the FINAL image the same type of product as in the reference images?"
+          },
+          "id": "P2",
+          "reason": "The final image shows a black two-door Jeep off-road vehicle like the reference.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does it have the same shape and silhouette as the reference product (a different viewing angle is fine)?"
+          },
+          "id": "P3",
+          "reason": "Its boxy body, high stance, and front-end silhouette match the reference.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does it have the same colours and materials as the reference product (lighting differences are fine)?"
+          },
+          "id": "P4",
+          "reason": "It retains the dark body, dark trim, and black off-road tires.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "question": "Are the reference product's distinctive components preserved: seven-slot front grille; round headlights; front bumper with two illuminated auxiliary lights; roof-mounted light bar; large knobby tires; flared wheel arches; rear-mounted spare tire partially visible? Answer unknown if they are not visible."
+          },
+          "id": "P5",
+          "reason": "no answer/abstained",
+          "required": true,
+          "verdict": "unknown"
+        },
+        {
+          "evidence": {
+            "answer": "yes",
+            "question": "Does the product's own branding/label match the reference (Jeep)? Ignore advertising copy placed around the product. Answer unknown if not legible."
+          },
+          "id": "P6",
+          "reason": "The Jeep badge is legible above the grille.",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "similarity": {
+              "best": 0.8903,
+              "per_reference": {
+                "330a8ce3b839f6d31eae61184c8b796c7664e7bebaa3e8fc3b1cd7b032f743eb": 0.8903
+              }
+            }
+          },
+          "id": "P-SIM",
+          "reason": "DINOv2 cosine similarity to the closest reference: 0.8903",
+          "required": false,
+          "verdict": "pass"
+        }
+      ],
+      "score": 0.9167,
+      "verdict": "unknown"
+    },
+    "score_definition": "per dimension: mean over required checks (pass 1, unknown 0.5, fail 0); text_rendering: mean max(0, 1-CER) per block; overall: unweighted mean. Ranking only; verdicts gate.",
+    "text_rendering": {
+      "checks": [
+        {
+          "evidence": {
+            "blocks": [
+              {
+                "block_id": "t1",
+                "cer": 0.0,
+                "exact_strict": true,
+                "expected": "Summer is calling.\nAnswer it off-road.",
+                "min_height_px": 64,
+                "min_score": 1.0,
+                "observed": "Summer is calling. Answer it off-road.",
+                "reason": "exact (whitespace-equivalent)",
+                "verdict": "pass",
+                "wer": 0.0
+              }
+            ]
+          },
+          "id": "R-BLOCKS",
+          "reason": "all 1 copy block(s) found exactly once",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "duplicates": [],
+            "extra": [],
+            "uncertain": []
+          },
+          "id": "R-EXTRA",
+          "reason": "no unplanned ad text",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "R-LEGIBLE",
+          "reason": "legibility proxy: confident reads and text height >= min_text_height_px (never fails on its own)",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "diagnostics": {
+        "exact_match_rate": 1.0,
+        "ocr_lines": {
+          "ad": [
+            {
+              "box": [
+                38,
+                850,
+                590,
+                932
+              ],
+              "score": 1.0,
+              "text": "Summer is calling."
+            },
+            {
+              "box": [
+                42,
+                926,
+                594,
+                990
+              ],
+              "score": 1.0,
+              "text": "Answer it off-road."
+            }
+          ],
+          "noise": [],
+          "product_label": [
+            {
+              "box": [
+                680,
+                465,
+                711,
+                480
+              ],
+              "score": 1.0,
+              "text": "Jeep"
+            }
+          ]
+        }
+      },
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "text_selection": {
+      "checks": [
+        {
+          "evidence": {},
+          "id": "S-SPANS",
+          "reason": "every block is an exact, ordered source span",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "uncovered": []
+          },
+          "id": "S-PROTECTED",
+          "reason": "protected phrases kept whole",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {
+            "blocks": 1,
+            "visible_chars": 33,
+            "words": 6
+          },
+          "id": "S-CAPACITY",
+          "reason": "within rendering capacity",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "S-EXACT",
+          "reason": "Exact mode keeps the entire input",
+          "required": true,
+          "verdict": "pass"
+        },
+        {
+          "evidence": {},
+          "id": "S-FULL",
+          "reason": "Exact mode: the whole input is the copy; no selection to judge",
+          "required": true,
+          "verdict": "pass"
+        }
+      ],
+      "score": 1.0,
+      "verdict": "pass"
+    },
+    "version": "eval-record/1"
+  }
+}
