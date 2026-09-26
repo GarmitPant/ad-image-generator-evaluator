@@ -1,6 +1,6 @@
 # Ad image generator and evaluator
 
-G2 hackathon project. **Generation v0.1 is implemented and verified offline.** Evaluation remains the main eventual deliverable, but has not been implemented. There is no UI, scoring, ranking or winner selection yet. No live inference or model-quality claim has been made.
+G2 hackathon project. **Generation, per-candidate evaluation, ranking and the submission report are implemented.** Generation has been verified live once (see `data/live-runs/`). The evaluator is tested on genuine recorded OCR/detection evidence; its judge has not yet been run live or calibrated against human labels. There is no UI.
 
 ## Run locally
 
@@ -23,6 +23,17 @@ ruff check src tests
 ```
 
 The tests deny network connections, including when exercising real SDK serialization with mock HTTP transports. See the [implementation checkpoint](docs/implementation-status.md) and [generation runbook](docs/generation-runbook.md).
+
+## Evaluate, rank and report
+
+```sh
+python -m pip install -e ".[eval]"   # local OCR/detector/embedder (~1.5 GB incl. weights; see runbook §7)
+adgen generate --request REQUEST.json --mode live --allow-paid     # generate -> evaluate -> rank -> export best
+adgen evaluate --request REQUEST.json --run-id RUN_ID --mode live --allow-paid   # score an existing run, no regeneration
+adgen report --out submission                                       # submission bundle from all evaluated runs
+```
+
+Every candidate gets text-selection, text-rendering, product (same-object) and context verdicts plus ranking scores. The winner is `approved` only if it passes every required check. Exports include `best.png` and `evaluations/`. `adgen report` writes `report.md`, `results.csv/json`, `contact-sheet.html`, `images/`, `evidence/` and `requests.jsonl`, and compares automated verdicts with human labels in `data/labels.csv` (see `data/LABELS.md`). `--skip-evaluation` keeps generation-only behaviour. The demo and all tests run offline without the `[eval]` models.
 
 ## What is implemented
 

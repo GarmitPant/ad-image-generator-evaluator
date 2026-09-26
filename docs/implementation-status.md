@@ -16,7 +16,7 @@ Checkpoint maintained by the implementing agent. Current human instruction: fini
 | Deferred | UI; all image evaluation, scores, selection and batch evaluation |
 | Spend control | Local budget cap removed (migration 002); limits are set on provider accounts; ledger keeps usage and report-only cost estimates |
 | Live evidence | First live run 2026-09-26 (Garmit's keys): 1 reference, Extract, 2 candidates, AU summer — all 8 calls completed, both images 1024×1024, ~$0.19 estimated. Curated in `data/live-runs/2026-09-26-rayban-au-summer-extract/` |
-| Next step | G9 remainder: 3 candidates and a multi-reference Exact request; then Garmit's human labels; then evaluator E0 |
+| Next step | Live-evaluate the Ray-Ban run; label it; generate ~20 requests (3 candidates each) incl. Exact/multi-reference; `adgen report` |
 
 Implementation and operating details: [generation runbook](generation-runbook.md). Design review and rationale: [implementation plan](generation-implementation-plan.md).
 
@@ -33,7 +33,7 @@ Specs: docs/design/05 §5–7 (text, product = same-object P1–P6, context, com
 | EV3 | Visual judge + candidate evaluator (`eval/judge.py`, `eval/evaluator.py`, `compose.rank`) | **done** — one judge call per candidate (refs + ad, blind to copy); P1 needs detector+judge agreement; judge outage → unknown/degraded; GR-TEXT image rule skipped (covered by rendering) |
 | EV4 | Pipeline integration | **done** — stages `selection_evaluation`, `reference_evidence` (cached), per-candidate `evaluation`, selection table + `export_evaluated` (so generation-only runs can be evaluated later via `adgen evaluate --run-id` without regenerating). Migration 003. CLI evaluates by default (`--skip-evaluation`); live requires `[eval]` models; replay uses `fixtures/vision/`; demo is replayable with evaluation. Candidate status: `evaluated` / `evaluation_failed` (image kept) |
 | EV5 | `adgen report` submission bundle (`eval/report.py`) | **done** — report.md (computed tables + method/criteria/limitations text), results.csv/json (one row per candidate incl. failures/unknowns, models, versions, dims, latency, cost), contact-sheet.html, images/, evidence/, requests.jsonl; human-label agreement from `data/labels.csv` (format in `data/LABELS.md`); synthetic runs excluded unless `--include-synthetic` |
-| EV6 | Docs/runbook; live evaluation of the curated Ray-Ban run (paid judge call, needs Garmit's go) | pending |
+| EV6 | Docs + live evaluation of curated Ray-Ban run | docs **done**. Offline dry run on a DB copy (synthetic judge + real local vision): only 3 judge calls, c1 pass/winner, c2 fail on R-EXTRA duplicate. **Pending: live judge run** `adgen evaluate --request runs/requests/rayban-extract.json --run-id 0d425b20667c4ae180bc26a10a93b550 --mode live --allow-paid` (Garmit's go), then human labels in `data/labels.csv`, then more requests and `adgen report` |
 
 ## Tickets
 

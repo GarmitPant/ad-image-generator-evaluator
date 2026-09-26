@@ -199,7 +199,7 @@ The judge answers each predicate with `yes|no|unknown`, region description and s
 
 | Evidence | Model | Where |
 |---|---|---|
-| Blind text detection and recognition with boxes | PaddleOCR PP-OCRv5 | Local |
+| Blind text detection and recognition with boxes | PaddleOCR 3.7 with PP-OCRv6 medium det/rec (pinned; the library default changed from v5) | Local |
 | Product crop and instance count (not position/orientation scoring) | `IDEA-Research/grounding-dino-tiny` @ `a2bb814d` | Local |
 | Crop identity similarity vs each reference | `facebook/dinov2-small` @ `ed25f3a3` | Local |
 | Atomic yes/no/unknown questions (product attributes, context, image guardrails, source→copy semantics, blind fallback transcription) | OpenAI `gpt-6-sol` with vision | API |

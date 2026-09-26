@@ -96,3 +96,15 @@ Detailed differences and operational limits: [generation runbook](generation-run
 | Keep Grounding DINO only to crop and count (no scoring of box position/orientation/scale) | Agent decision under that direction: a crop makes DINOv2 and label OCR compare the product, not the scene background; count supports the missing/duplicate check | Drop detector and embed whole images (rejected: background dominates similarity) |
 | DINOv2 similarity is a diagnostic until dev calibration shows it separates same vs wrong objects | Proposed; no threshold assumed | Fixed similarity threshold |
 | Pinned weights: grounding-dino-tiny `a2bb814d`, dinov2-small `ed25f3a3` (Apache-2.0) | Proposed pins from Hugging Face on 2026-09-26 | — |
+
+
+## 2026-09-26 — Evaluator implementation decisions (Claude Code; for Garmit's review)
+
+| Decision | Status and reason |
+|---|---|
+| Evaluator runs inside the pipeline after each output gate; `generate` evaluates by default, `--skip-evaluation` opts out | Implements the confirmed generate → evaluate → present-best flow |
+| One visual judge call per candidate (product P2–P6, context, image guardrails); judge never sees expected copy or passing answers | Cost/latency bound; blindness tested |
+| P1 (exactly one product) requires detector and judge agreement, else unknown | Detector alone gave a 0.70 "sunglasses" box on a beer bottle |
+| Image rule GR-TEXT not asked of the judge; unplanned text is judged by OCR rendering checks | Avoids the judge flagging the intended ad copy |
+| Proposed success criteria written into the report before results: no human-labelled failure accepted; false rejects ≤20% of labelled passes; abstentions reported | Proposed targets; not yet measured |
+| Known score weakness: text-rendering score is CER-based, so duplicated copy lowers the verdict but not the score | Ranking still correct because verdicts gate; stated in limitations |
