@@ -1,44 +1,84 @@
-# Agent working brief
+# Guide for coding agents (and humans) working in this repository
 
-## Scope and authority
+This file is tool-agnostic: Claude Code, Codex, Cursor, Copilot and other agents can all follow it. Read `README.md` (what the project does, setup, commands) and `DESIGN.md` (why it is built this way) first.
 
-This repository contains both design and implementation for Garmit's G2 hackathon project. The active implementing agent maintains checkpoints in docs/implementation-status.md. Do the work authorized by the current user instruction; documentation changes alone do not authorize paid inference or unrequested application implementation.
+## What this repository is
 
-Read README.md, docs/implementation-status.md, docs/design/01-generation-pipeline.md, docs/design/06-state-store.md, docs/design/05-evaluation-and-text-contract.md and docs/design/04-implementation-handoff.md. Garmit's latest clarification takes precedence over earlier design assumptions. docs/context/ is a historical context bank, including its obsolete AGENT_BRIEF.md; never copy that over this file.
+A Python pipeline that generates display-ad images (Gemini 3.1 Flash Image) from product photos, a country, a season and ad text, then **evaluates every image** with local vision models plus an LLM-as-judge (OpenAI), ranks the candidates in code and writes a human-readable report.
 
-Current checkpoint: generation v0.1 is implemented and tested offline. See docs/generation-runbook.md for actual interfaces and deviations from the design blueprint. Garmit explicitly deferred live inference, UI and evaluator implementation during this checkpoint. Future paid inference still requires approval.
+```text
+src/adgen/
+  cli.py            command-line entry point (adgen …)
+  pipeline.py       orchestrates all stages over the state store
+  contracts.py      request and model-output schemas (pydantic, extra fields forbidden)
+  assets.py         image decoding, normalisation, hashing
+  text.py           Exact/Extract copy selection and validation
+  context.py        country facts and hemisphere-aware seasons
+  planning.py       planner/reviewer prompts, plan validation, keyword guardrails, image prompt
+  providers.py      OpenAI/Gemini adapters, record/replay, call ledger
+  state/            SQLite state store and numbered migrations
+  demo.py           synthetic provider for the offline demo and tests
+  eval/             evaluator: vision.py (local models), text_eval.py, judge.py, evaluator.py,
+                    compose.py (verdicts, scores, ranking), report.py (report bundle)
+config/             pipeline.toml, evaluator.toml
+policy/             guardrails.yaml
+tests/              offline tests; tests/fixtures/ holds genuine recorded evidence
+```
 
-## Confirmed direction
+## Commands
 
-- Automated evaluation is the primary judged deliverable: defensible methods, criteria, evidence, calibration, offline tests and honest results. Implementation order: generation pipeline first, then evaluator.
-- Python; geography is an enum of 8 countries (US, GB, DE, JP, IN, AU, BR, AE) with one facts row each; season is an enum. Use organizer-allowed Gemini image generation; published generated images have long edge ≤1024 px.
-- Providers: OpenAI for all LLM stages, Google Gemini for image generation. Do not write Anthropic/Claude code for now.
-- An LLM creative planner designs scene/layout from product profile + resolved context and sees text roles/lengths only, never the copy. Guardrails are simple and predefined in a static policy file (global rules + optional country notes; no web lookup): keyword check + LLM reviewer, one replan, then generate and flag.
-- Every stage runs through the SQLite state store (docs/design/06-state-store.md).
-- Commit only `.env.example` with empty placeholders; users supply their own keys.
-- Commits are authored by Garmit; do not add AI co-author trailers.
-- Freeform text is content to display, not instructions about scene or style.
-- User selects Exact or Extract mode. Exact preserves all input content. Extract selects relevant spans; optional protected phrases stay unchanged. Freeze selected copy before rendering.
-- Evaluate source-to-selected-copy fidelity AND selected-copy-to-image rendering fidelity. Rendering correct text from an unfaithful selection is not a passing result.
-- Product fidelity and geography/season adherence remain required evaluation dimensions.
-- UI, aesthetic optimization, multi-candidate selection and repairs are secondary.
-- Concise chat; detailed technical artifacts. The repository supports implementation as well as design.
+```sh
+source .venv/bin/activate
+pytest -q                   # must pass before any commit; offline, no keys needed
+ruff check src tests        # lint (line length 100)
+ruff format src tests       # formatting
+adgen demo                  # offline end-to-end smoke run with synthetic models
+```
 
-## Current proposed safeguards
+Live commands (`--mode live --allow-paid`) cost money. **Run them only with the repository owner's explicit approval.** Never add automatic retries around paid calls.
 
-- Generation: cached product analysis over 1–3 references, Exact-in-code or one Extract selection call, code context resolution, then per candidate (default 3): planner (≤2 calls), simple guardrail review (≤2 calls), code prompt compilation, one image call. Every call is bounded, recorded before dispatch and never silently retried.
-- Evaluate every candidate (local OCR/detector/embedding models + OpenAI vision judge), rank in code (verdicts gate, scores rank), present the best (approved only if it passes), save all images. Batched evaluation comes after.
-- Initial extraction is source-span based; semantic checks catch misleading omissions even if every chosen word occurs in the input. No unsupported paraphrase.
-- Validate schemas and span references in code. Keep source, policy, protected spans, plan, reference, image and evaluator versions immutable and hashed.
-- A source/plan selector cannot define its own passing criteria after seeing results. Human gold requirements are independently labelled.
-- Run OCR/blind transcription without supplying expected text. Match text blocks spatially and one-to-one; record missing, altered, unexpected and illegible content.
-- Compose verdicts in code. Keep evaluation reliability separate from pass/fail/unknown quality. Learned measurements are fallible; missing evidence never means pass.
-- Keep generation and standalone evaluation decoupled. Replay must never fall through to paid providers.
-- Genuine recorded responses and real labelled images test evaluator behaviour; synthetic fixtures test control flow only.
-- Paid inference requires Garmit's explicit go-ahead and `--allow-paid`. Spend limits are enforced on the provider accounts, not in code; the ledger records usage and report-only cost estimates. No hidden billable retries; never resend an unknown-outcome call.
-- No secrets in logs/commits; use gitignored environment configuration. Preserve provider provenance markings.
-- Report counts, abstentions, tuning splits, human intervention and failures. Do not invent model superiority, calibration or test results.
+## Rules that keep the system correct
 
-## Records
+Break one of these only after an explicit decision by the owner, and update `DESIGN.md` when you do.
 
-Append actual milestones and human revisions to docs/agent-collaboration.md. Record accepted/rejected/superseded decisions in docs/decisions.md. Model choices, numerical thresholds and capacity limits are proposals until evidence or user direction establishes them.
+1. **Verdicts are composed in code.** Models return measurements (OCR text, boxes, similarity) or answers to narrow yes/no/unknown questions. Never let a model return an overall verdict or score. A failed required check fails; otherwise an unresolved one gives UNSURE. Missing evidence is never a pass.
+2. **Keep the evaluator blind where it matters.** OCR and the LLM judge must never be given the expected ad copy, and judge prompts must never contain the answer that passes. Tests enforce this; keep them green.
+3. **Ad text is content, not instructions.** The scene planner sees only the role and length of each copy block, never its wording. Never pass raw source text into scene planning or the image prompt except as literal copy to render.
+4. **Scores only break ties.** Ranking is: verdict, failed checks, score, diagnostics, guardrail status, candidate index. A higher score must never outrank a failed check.
+5. **Scene criteria come from inputs and policy.** The evaluator must never adopt the planner's own cues as pass criteria, because that would let the generator grade itself.
+6. **Paid-call safety.** Every provider call is recorded as dispatched before it is sent. A call with an unknown outcome is never re-sent automatically. SDK retries stay disabled.
+7. **No secrets anywhere.** Keys live only in `.env` (gitignored). Never log, print, store or commit them. Error records store exception type names, not SDK messages.
+
+## Versioning: when you change behaviour, bump the version
+
+Runs are content-addressed, so a changed prompt or criterion must not silently mix with earlier results.
+
+| If you change… | Bump |
+|---|---|
+| Generation prompts, planner or reviewer instructions | `prompts` in `src/adgen/config.py` and `version` in `config/pipeline.toml` |
+| Guardrail rules or keywords | `version` in `policy/guardrails.yaml` |
+| Any evaluator check, question, threshold or local model | `version` in `config/evaluator.toml`. Evaluation stages are named after it, so existing runs can be re-scored with `adgen evaluate` without regenerating |
+| The ranking rule | `RANKING_VERSION` in `src/adgen/eval/compose.py` (re-ranking reuses stored evaluations) |
+| The database schema | Add a new numbered file in `src/adgen/state/migrations/` and append it to `MIGRATIONS`. Never edit an existing migration |
+
+Comments in TOML/YAML files are not part of any config hash; the values are.
+
+## Extending
+
+- **Add a country:** add it to `Geography` in `src/adgen/contracts.py` and add one row to `FACTS` in `src/adgen/context.py` (name, hemisphere, climate band, neutral note). No per-country scene templates. The completeness tests cover every country × season.
+- **Add an evaluator check:** add the question in `src/adgen/eval/judge.py` (or a code check in `text_eval.py` / `evaluator.py`), decide whether it is required or diagnostic (`DIAGNOSTIC`), give it a readable name in `CHECK_NAMES` (`src/adgen/eval/report.py`), add tests, and bump the evaluator version.
+- **Add a product or request:** put photos in `data/products/` with source and licence in its README, and write a request JSON (format in `README.md`). Several references in one request must show the same product variant.
+
+## Testing conventions
+
+- Tests never touch the network: `tests/conftest.py` blocks sockets. Use `adgen.demo.SyntheticProvider`, `SyntheticVision`, or the record/replay backends.
+- **Genuine recorded evidence** (real OCR/detections from generated ads) lives in `tests/fixtures/` and is labelled with its source. **Synthetic** responses test control flow only. Never present synthetic results as evidence of model quality.
+- When a real run reveals an evaluator mistake, record that case as a fixture and add a regression test before fixing it.
+- Offline tests must not need API keys or the local model weights. Import heavy libraries (torch, transformers, PaddleOCR) lazily inside functions.
+
+## Working practices
+
+- Stage explicit paths (`git add path …`), not `git add -A`, and review what you commit. Data files dropped into the tree by others must not be committed unreviewed.
+- Do not change code or config while a batch is running. `scripts/run-batch.sh` starts a new process per request, so edits would affect the remaining requests.
+- Keep `runs/` (local state, artifacts, exports) out of Git. Only curated results belong in the repository (`submission/`).
+- Report honestly: counts beside percentages, unknowns and failures included, and no claims of evaluator accuracy without human-labelled evidence.

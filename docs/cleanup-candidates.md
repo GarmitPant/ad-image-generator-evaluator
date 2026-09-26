@@ -1,6 +1,6 @@
 # Cleanup list for the final submission commit (prepared — nothing removed yet)
 
-Rule (Garmit): the final state keeps the implementation, its inputs, tests, `README.md`, `DESIGN.md`, the coding-agent disclosure (`AI_DECLARATION.md`) and the generated evaluation report. Plans, specs, briefs, checkpoints and agent instructions are removed from the final tree (they stay in Git history; no history rewrite).
+Rule (Garmit): the final state keeps the implementation, its inputs, tests, `README.md`, `DESIGN.md`, `AGENTS.md` (rewritten as a tool-agnostic contributor guide) with `CLAUDE.md` pointing to it, the coding-agent disclosure (`AI_DECLARATION.md`) and the generated evaluation report. Plans, specs, briefs, checkpoints and agent instructions are removed from the final tree (they stay in Git history; no history rewrite).
 
 **Timing: do not edit anything in `src/`, `config/` or `policy/` while the batch is running.** `scripts/run-batch.sh` starts a new process per request, so edits would change the remaining requests. Do the cleanup after `submission/` is built. Before and after: `ruff check src tests`, `pytest -q`, `adgen demo`.
 
@@ -8,7 +8,6 @@ Rule (Garmit): the final state keeps the implementation, its inputs, tests, `REA
 
 | Path | What it is |
 |---|---|
-| `AGENTS.md`, `CLAUDE.md` | Agent working brief and pointer |
 | `docs/context/` (7 files) | Original context bank and requirements given to the agents |
 | `docs/design/` (7 files) | Specs v0.1–v0.4 and implementation handoff (superseded by `DESIGN.md`) |
 | `docs/generation-implementation-plan.md` | Earlier agent's generation plan |
@@ -51,6 +50,7 @@ Leave as they are: `"Country-level pilot approximation"` (`src/adgen/context.py`
 | Path | Why |
 |---|---|
 | `README.md`, `DESIGN.md`, `AI_DECLARATION.md` (after expansion) | Submission documents |
+| `AGENTS.md`, `CLAUDE.md` | Tool-agnostic guide for anyone (or any agent) working in the repo; `CLAUDE.md` is a pointer for Claude Code |
 | `src/`, `tests/` (incl. `tests/fixtures/`), `pyproject.toml`, `requirements.lock`, `.github/workflows/`, `.env.example`, `.gitignore` | Implementation, tests, CI, setup |
 | `config/`, `policy/`, `scripts/run-batch.sh` | Configuration and batch runner |
 | `data/products/` (photos and provenance README), `data/requests/batch-v1/` (9 requests) | Inputs of the submitted results |
