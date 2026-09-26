@@ -23,7 +23,7 @@ Normalize references → freeze copy → resolve context → analyze product
     ↓
 For each candidate: plan → review/replan once → Gemini image
     ↓
-Local OCR + product detection + embeddings + OpenAI visual judge
+Local OCR + product detection + embeddings + LLM judge
     ↓
 Code composes verdicts → ranks candidates → exports images and evidence
 ```
@@ -38,24 +38,24 @@ SQLite records stages, model calls, versions and artifact hashes throughout. Eva
 | Exact or source-span Extract | Exact retains the input; Extract chooses original substrings with protected phrases. This prevents paraphrasing, but a separate semantic check must catch misleading omissions. |
 | Shared analysis, separate candidate plans | Analyze all product references once, then produce distinct compositions without repeating shared work. |
 | Country facts plus hemisphere-aware seasons | Avoid maintaining a scene template for every country–season pair. This remains a country-level approximation. |
-| Hybrid evaluator | Local models provide text, boxes and similarity; the hosted judge handles semantic and visual questions. Neither alone provides reliable evidence for every requirement. |
+| Hybrid evaluator | Local models provide text, boxes and similarity; an **LLM-as-judge** (a multimodal OpenAI model that sees the reference photos and the ad) answers narrow semantic and visual questions. Neither alone provides reliable evidence for every requirement. |
 | Verdicts before scores | A visually similar product cannot compensate for incorrect text. Scores rank candidates only after their verdict tier and failed-check count. |
 | CLI, local state and report bundle | Prioritize reproducible runs and inspectable evidence within the hackathon deadline. A UI is unnecessary for inspecting saved results. |
 
-OpenAI `gpt-6-sol` handles analysis, extraction, planning and judging. Gemini `gemini-3.1-flash-image` renders square images. Local evaluation uses PaddleOCR PP-OCRv6, Grounding DINO tiny and DINOv2 small. These are task assignments, not a claim that comparative testing proved the models best.
+OpenAI `gpt-6-sol` handles analysis, extraction and planning, and serves as the LLM judge. Gemini `gemini-3.1-flash-image` renders square images. Local evaluation uses PaddleOCR PP-OCRv6, Grounding DINO tiny and DINOv2 small. These are task assignments, not a claim that comparative testing proved the models best.
 
 ## 4. How evaluation works
 
 | Dimension | Evidence and decision |
 |---|---|
-| Source → selected copy | Code validates exact spans, protected content and capacity. For Extract, an OpenAI judge checks meaning, relevance and essential omissions. Negative semantic judgments require a quote from the source. |
-| Selected copy → image | OCR reads without seeing expected copy. Code groups nearby lines and matches expected blocks to disjoint observed lines. It checks missing, altered, duplicated and extra ad text, with character/word error diagnostics and a legibility proxy. |
-| Product identity | Detection provides candidate product regions. A visual judge checks count, type, shape, colors/materials, components and visible branding against all references. Position and viewing angle are not identity requirements. |
-| Context and policy | Narrow judge questions check seasonal consistency, country plausibility and image-level policy violations. Country recognisability is diagnostic rather than a required pass condition. |
+| Text selection (input → copy) | Code validates exact spans, protected content and capacity. For Extract, the LLM judge checks meaning, relevance and essential omissions. Negative semantic judgments require a quote from the source. |
+| Text rendering (copy → image) | OCR reads without seeing expected copy. Code groups nearby lines and matches expected blocks to disjoint observed lines. It checks missing, altered, duplicated and extra ad text, with character/word error diagnostics and a legibility proxy. |
+| Product | Detection provides candidate product regions. The LLM judge checks count, type, shape, colours and materials, distinctive parts and visible branding against all references. Position and viewing angle are not identity requirements. |
+| Context | Narrow LLM-judge questions check seasonal consistency, country plausibility and image-level policy violations. Country recognisability is diagnostic rather than a required pass condition. |
 
 Text matching tolerates whitespace reflow while retaining a strict comparison diagnostic. Text inside detected product regions is treated as product labeling rather than extra ad copy. This is a practical heuristic, not perfect text-region classification.
 
-DINOv2 similarity compares product crops with references. It remains an uncalibrated diagnostic and tie-breaker, not a hard identity threshold. Product-count acceptance currently requires the judge to count one and the detector to find at least one; this is corroboration, not strict agreement on the exact count.
+DINOv2 similarity compares product crops with references. It remains an uncalibrated diagnostic and tie-breaker, not a hard identity threshold. Product-count acceptance currently requires the LLM judge to count exactly one and the detector to find at least one; this is corroboration, not strict agreement on the exact count.
 
 Each required check returns **PASS, FAIL or UNSURE**. A failed required check fails the candidate; otherwise unresolved required checks prevent a pass. Infrastructure failure is recorded separately. OCR unavailability becomes UNSURE, although unmatched expected text becomes FAIL; an OCR detection miss can therefore cause a false rejection.
 
@@ -67,7 +67,7 @@ Current policy permits regional architecture, materials, food settings and backg
 
 Before generation, keyword checks and a model reviewer inspect the plan. One replan is allowed. A second rejected but valid plan is still generated and flagged; image evaluation then checks the actual output. Plan approval alone is never image approval.
 
-The pilot exposed evaluator failures as well as generation failures: overlapping OCR boxes split a headline, wrapped copy exceeded the line-matching limit, and bottle-label text was mistaken for extra ad copy. Evaluator/3 added regression fixtures and adjusted line grouping, wrapping and label exclusion. These changes demonstrate debugging against evidence; they do not establish evaluator accuracy.
+The pilot exposed evaluator failures, not generation failures: all six pilot ads were correct, but three were falsely rejected. Overlapping OCR boxes split a headline, wrapped copy exceeded the line-matching limit, and bottle-label text was mistaken for extra ad copy. A revised evaluator adjusted line grouping, wrapping and label exclusion, and the three cases became regression fixtures. The pilot images were then re-scored without regeneration. These changes demonstrate debugging against evidence; they do not establish evaluator accuracy.
 
 ## 6. Traceability and failure handling
 
@@ -85,6 +85,6 @@ The two pilot requests informed evaluator changes and are development data, even
 
 ## 8. Limitations and next steps
 
-Thresholds are provisional. OCR, detection and hosted judgments can be wrong, and generator/judge stages share an OpenAI model family. Country plausibility is weaker than recognisable localization. Region exclusion can hide ad text that overlaps a product. Small similarity differences need not mean perceptible quality differences. The batch is a small demonstration, not evidence of broad generalization or model superiority.
+Thresholds are provisional. OCR, detection and LLM-judge answers can be wrong. The LLM judge shares a model family (OpenAI) with the planner and plan reviewer, though not with the image generator (Gemini). Country plausibility is weaker than recognisable localization. Region exclusion can hide ad text that overlaps a product. Small similarity differences need not mean perceptible quality differences. The batch is a small demonstration, not evidence of broad generalization or model superiority.
 
 Next priorities: independent human labels, per-dimension false-alarm/missed-failure measurement, a frozen held-out evaluation, and targeted improvement of uncertain cases. Add models or a UI only after establishing whether the evaluator is trustworthy.
