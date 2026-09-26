@@ -2,38 +2,35 @@
 
 ## Scope and authority
 
-Garmit owns scope and architecture. This repository is for the G2 ad image generation/evaluation hackathon. Another agent handles implementation; this design collaboration develops research, specifications and plans. Do not begin implementation merely because documentation has been copied here.
+This repository contains both design and implementation for Garmit's G2 hackathon project. Another coding agent implements here; this design collaboration handles research/specification. Do the work authorized by the current user instruction; documentation changes alone do not authorize paid inference or unrequested application implementation.
 
-Read `README.md`, `docs/context/01-problem-statement.md`, and the documents under `docs/design/` before work. Organizer requirements and Garmit's latest explicit instructions take precedence. `docs/context/` is an immutable historical context bank. Its `AGENT_BRIEF.md` and design sketches contain superseded proposals; do not apply them over the corrections in `docs/design/`.
-
-Current design v0.1 remains proposed except where Garmit's explicit instructions establish a requirement. Do not record a proposal as approved. Authorized implementation tasks can follow their named spec; document consequential deviations and raise unresolved decisions without blocking independent work.
+Read README.md, docs/design/05-evaluation-and-text-contract.md, docs/design/01-generation-pipeline.md and docs/design/04-implementation-handoff.md. Garmit's latest clarification takes precedence over earlier design assumptions. docs/context/ is a historical context bank, including its obsolete AGENT_BRIEF.md; never copy that over this file.
 
 ## Confirmed direction
 
-- Python; strong typing for geography and season.
-- Separate product-reference analysis, ad planning and image rendering responsibilities. Different tasks may share a model ID.
-- Required ad text stays verbatim; planning changes typography and placement, not its content.
-- Image generation uses an organizer-allowed Gemini 3.1 Flash Image or Flash-Lite Image model; generated outputs must have long edge ≤1024 px.
-- Evaluate at least context adherence, product fidelity and text fidelity, with automated evidence of passing and failing cases.
-- UI is secondary. Keep library/CLI interfaces reusable by a later UI.
-- Concise chat; meticulous specs, plans and technical validation.
+- Automated evaluation is the primary engineering deliverable: defensible methods, criteria, evidence, calibration, offline tests and honest results. Generation only needs to function.
+- Python; geography and season strongly typed. Use organizer-allowed Gemini image generation; published generated images have long edge ≤1024 px.
+- Freeform text is content to display, not instructions about scene or style.
+- User selects Exact or Extract mode. Exact preserves all input content. Extract selects relevant spans; optional protected phrases stay unchanged. Freeze selected copy before rendering.
+- Evaluate source-to-selected-copy fidelity AND selected-copy-to-image rendering fidelity. Rendering correct text from an unfaithful selection is not a passing result.
+- Product fidelity and geography/season adherence remain required evaluation dimensions.
+- UI, aesthetic optimization, multi-candidate selection and repairs are secondary.
+- Concise chat; detailed technical artifacts. The repository supports implementation as well as design.
 
-## Proposed implementation safeguards
+## Current proposed safeguards
 
-When implementing the current generation design, preserve these contracts unless Garmit changes them:
+- Functional baseline: one source selection call when Extract is used, optional cached reference analysis, deterministic scene/layout compilation, one image call. Exact selection is code. Do not add separate creative planning just for architectural complexity.
+- Initial extraction is source-span based; semantic checks catch misleading omissions even if every chosen word occurs in the input. No unsupported paraphrase.
+- Validate schemas and span references in code. Keep source, policy, protected spans, plan, reference, image and evaluator versions immutable and hashed.
+- A source/plan selector cannot define its own passing criteria after seeing results. Human gold requirements are independently labelled.
+- Run OCR/blind transcription without supplying expected text. Match text blocks spatially and one-to-one; record missing, altered, unexpected and illegible content.
+- Compose verdicts in code. Keep evaluation reliability separate from pass/fail/unknown quality. Learned measurements are fallible; missing evidence never means pass.
+- Keep generation and standalone evaluation decoupled. Replay must never fall through to paid providers.
+- Genuine recorded responses and real labelled images test evaluator behaviour; synthetic fixtures test control flow only.
+- Paid inference requires an authorized concrete estimate and ledger. No API budget is approved yet. No hidden billable retries.
+- No secrets in logs/commits; use gitignored environment configuration. Preserve provider provenance markings.
+- Report counts, abstentions, tuning splits, human intervention and failures. Do not invent model superiority, calibration or test results.
 
-- Validate model plans and compile prompts in code. Do not silently rewrite inputs.
-- Use two candidates and at most one repair with three total image dispatches, including retries.
-- Keep reference artifacts, plans, generated parents and edited children immutable and hash-linked.
-- Distinguish evaluation reliability (`ok|degraded|failed`) from image verdict (`pass|fail|unknown`). Missing evaluation never means passing.
-- Compose acceptance in code. Do not let a model invent an overall passing score.
-- Reevaluate every dimension after an edit. Never overwrite evidence with an edited image.
-- Never claim OCR/detection/embeddings are infallible or that a generated preview has passed an unimplemented evaluator.
-- Keep tests offline by default. Actual recorded model responses support regression tests; synthetic responses prove control flow only.
-- Paid inference requires a concrete estimate and Garmit's authorization; no API budget has yet been approved. Keep a cost ledger including failed/uncertain calls. Do not silently retry billable calls.
-- Keep credentials in a gitignored `.env` or process environment; never print or commit secrets. Preserve provider provenance markings.
-- Record human labels, threshold-tuning split, unknowns, failure counts and measured results honestly.
+## Records
 
-## Milestones and records
-
-Use `docs/design/04-implementation-handoff.md` for ticket boundaries and acceptance tests. After each milestone append the actual user instruction, work performed, validation, human changes, and unresolved issues to `docs/agent-collaboration.md`. Record accepted/rejected decisions in `docs/decisions.md`, linking the source instruction. Never claim tests or API probes ran when they did not.
+Append actual milestones and human revisions to docs/agent-collaboration.md. Record accepted/rejected/superseded decisions in docs/decisions.md. Model choices, numerical thresholds and capacity limits are proposals until evidence or user direction establishes them.

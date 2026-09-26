@@ -1,130 +1,104 @@
-# Handoff to the implementation agent
+# Implementation handoff — evaluation first
 
-Status: generation-first design v0.1. The full evaluator design is a subsequent collaboration step. Do not treat provisional evaluator choices as calibrated facts.
+Version 0.2 · 2026-09-26
 
-## 1. Operating brief
+## 1. Mission
 
-Build a Python CLI/library for the pipeline in `01-generation-pipeline.md`. Use the model decisions in `02-model-decisions.md`. Garmit wants separate reference-analysis, ad-planning, and image-rendering tasks. Analysis and planning can share a model ID but must have distinct schemas and cached results. Preserve the required ad text exactly.
+Implement in this repository. Read AGENTS.md and document 05 first. The primary engineering deliverable is a defensible automated evaluator, not an elaborate ad-generation architecture. Garmit confirmed explicit Exact/Extract text policies, with optional protected phrases. Freeform text supplies ad content, not visual style.
 
-Implementation happens in a new repository. Copy the original seven context documents for provenance. Reconcile the old `AGENT_BRIEF.md` against the explicit decisions here before turning it into root `AGENTS.md`. In particular, remove contradictions around whitespace normalization, similarity-based text pass, retry caps, missing evidence, and score ranking. Record Garmit's accepted/rejected design decisions as they arrive.
+Latest specification authority: 05 defines text/evaluation; 01 defines minimal generation; 02 gives provisional model choices. Historical context contains obsolete whole-input-verbatim and generation-first defaults. Do not copy those back into code.
 
-The coding agent must not invent organizer answers, model-access results, successful live tests, calibrated thresholds, human labels or budget authorization. No UI work until pipeline and evaluator evidence are complete. Do not interpret a generated preview as a passing ad.
+## 2. Ticket order
 
-## 2. Minimal module boundaries
+| Ticket | Deliverable | Exit evidence |
+|---|---|---|
+| E0 | Contracts, rubric skeleton and fixture manifest | Exact/Extract schema tests; separate selection/render/product/context verdicts |
+| G0 | Functional one-image generator | One allowed-model image, final pixels ≤1024, immutable input/TextPlan/image manifest |
+| E1 | Source→copy checks and render OCR/alignment | Protected coverage, span integrity, omission semantics, spatial one-to-one matching, exact/CER/WER observations |
+| E2 | Product/context evidence modules | Real observed evidence, documented model limitations, unknown handling and code-based composition |
+| E3 | Human-labelled dev examples and threshold freeze | Criteria and tuning splits recorded before held-out evaluation |
+| E4 | About twenty held-out pipeline images plus targeted negatives | Actual recorded observations, pass/fail/unknown labels and offline regression tests |
+| E5 | Report and disclosure | Confusion counts, abstention/coverage, separate text-stage metrics, failure analysis and clean-clone replay |
+| Optional | Generation repair, best-of-N, enrichment ablation, UI | Only after E0–E5; separately bounded costs |
+
+Aim to keep initial generation work to roughly one fifth of remaining engineering time; spend the rest on evaluation/data/reporting. This is a planning recommendation, not a claim about judges' numeric scoring weights. The earlier six-hour estimate is stale; check actual remaining time before setting deadlines. Do not burn the final report/test buffer on image polish.
+
+## 3. Minimal modules
 
 ```text
 src/adgen/
-  contracts.py        # request, artifacts, profile, plan, evaluation, run result
-  assets.py           # decode, orient, normalize, hash, immutable save
-  registry.py         # reviewed market/season profiles and cue compatibility
-  reference.py        # cached product extraction, human-reviewed overrides
-  planner.py          # structured ad planning + labelled template fallback
-  compiler.py         # pure prompt and quality-contract compilation
-  providers/gemini.py # text/vision and image adapters, no domain policy
-  pipeline.py         # finite state flow, candidate creation and repair policy
-  selection.py        # hard gates and stable tie-breaking
-  store.py            # manifests, atomic artifacts, events, resume lock
-  budget.py           # reservations, usage, price versions, unknown liabilities
-  cli.py              # validate, plan, generate, evaluate, run, resume
-  eval/               # interface now; full implementations in next milestone
+  contracts.py          # request, source contract, TextPlan, EvalRecord
+  assets.py             # decoding, normalization, hashes, artifact save
+  text_selection.py     # Exact in code; Extract model + structural validation
+  registry.py           # reviewed geography/season profiles
+  compiler.py           # fixed composition and literal selected copy
+  generation.py         # one allowed Gemini image call
+  store.py  budget.py   # manifests, resume, usage and reservations
+  eval/
+    source_fidelity.py  # source→plan checks and semantic observations
+    text_rendering.py   # blind OCR, spatial blocks, assignment, exact/CER/WER
+    product.py          # presence/identity/branding evidence
+    context.py          # atomic scene checklist
+    compose.py          # policy in code, unknown propagation
+    providers.py        # structured judge and record/replay
+    report.py           # metrics from labels + records, no invented summaries
+  cli.py                # generate, evaluate, replay, report
 ```
 
-Keep this as a single-process program. No database, vector store, web server, message queue, multi-agent runtime, or orchestration framework is needed. Separate protocols/adapters only where they make offline testing or model replacement concrete.
+Use one Python process and files. The evaluator accepts external fixtures and never invokes generation. Keep provider-boundary schemas and versions explicit. Do not add an orchestration framework just to express this sequence.
 
-## 3. Six-hour working allocation
+## 4. Acceptance cases
 
-This is an approximate remaining-time allocation, not a delivery promise. Update it against elapsed time and actual setup issues. Human billing/photos and implementation preparation can proceed concurrently; this does not require spawning additional agents.
+### Text contract and extraction
 
-| Elapsed allocation | Work | Exit condition |
-|---|---|---|
-| 0:00–0:25 | Repo/dependency setup; keys/billing; one approved compatibility probe | Allowed model returns one decoded square image with cost/latency receipt |
-| 0:25–1:25 | Typed contracts, registry subset, product profile, planner, compiler, generation/store | One request reaches `generated_unscored`; dry-run/replay work offline |
-| 1:25–1:50 | Four diverse pilot requests, inspect profiles/plans and outputs | Freeze obvious prompt fixes and declare calibration vs holdout samples |
-| 1:50–3:20 | Evaluator implementation from next reviewed spec; integrate interfaces | Genuine positive and negative fixtures per dimension, reliability semantics work |
-| 3:20–4:20 | Twenty-request dataset, human labels, recorded judge calls, offline regression tests | Counts/manifests complete including failures; thresholds frozen before held-out report |
-| 4:20–5:00 | One repair path and paired context ablation if time permits | Bounded repairs with full reevaluation; equal-budget comparisons |
-| 5:00–6:00 | Results/write-up/disclosure, clean-clone offline run, fix issues | Honest submission with limitations and reproducible evidence |
+- Exact input retains all visible characters in order, with only documented whitespace/reflow equivalence.
+- Extract accepts longer source prose and may omit irrelevant material without creating a whole-source OCR mismatch failure.
+- Protected name omitted or altered fails source selection even if the rendered image matches the bad plan exactly.
+- Invalid offsets, normalized-string offsets, wrong source hash, ambiguous repeated occurrences and out-of-range spans fail validation.
+- Selecting “waterproof” from “Not waterproof” passes a substring lookup but fails semantic fidelity.
+- Losing “up to” or “selected items” from an offer is tested with frozen human-labelled expectations.
+- Capacity overflow returns copy_capacity_exceeded; no silent truncation or switch from Exact to Extract.
+- The selector cannot invent product claims or render instructions. Raw prose is not passed into scene planning.
+- Scene instructions inside source text do not change the structured geography/season profile.
 
-If behind, cut repair, ablations, nonessential color metrics and extra models first. Keep automated evaluator tests, human labels and write-up. Do not drop fidelity checks and still claim the original quality bar. Report any incomplete metric as unsupported/unknown.
+### Rendering and evidence
 
-PaddleOCR/Grounding DINO/DINOv2 installation and one local inference should be checked early. Do not wait until hour three to discover unavailable model weights or runtime incompatibility. Choose one OCR engine after the probe, not two redundant engines by default.
+- Correct selected blocks are matched one-to-one to spatial OCR blocks; a single word cannot satisfy two required occurrences.
+- Changed number/currency/percent/case/punctuation, missing word, clipped text and extra offer produce specific failed checks.
+- A harmless font or line-wrap change remains a positive when legible.
+- A matching phrase only on the product label does not silently satisfy an ad-headline requirement.
+- Expected text is absent from blind transcription prompts; store those prompts so leakage can be audited.
+- Missing or conflicting OCR evidence propagates unknown/degraded, not a fabricated typo or automatic pass.
+- Source selection and rendering verdicts are reported separately and jointly.
 
-## 4. Build tickets for the generation slice
+### Product/context and composition
 
-### T0 — Provider and asset probe
+- Same-category wrong product/brand is a required negative; a high embedding score cannot bypass branding criteria.
+- Missing/duplicate product, altered distinguishing features and allowable viewpoint changes have labelled fixtures.
+- Context negatives rely on observable violations, not arbitrary “wrong-country” labels for visually ambiguous scenery.
+- Optional scenery is not a hard requirement. Dependencies skip invalid follow-up questions when their subject is absent.
+- A trusted failure remains a failure even if another check is unknown; an unknown required check prevents pass when there are no failures.
+- Model outputs supply observations/atomic answers only; overall verdict is composed in code.
 
-Deliver sanitized receipt, model/SDK manifest, image with measured dimensions, and a failed-call fixture. No bulk generation. Stop if billing/model access fails; continue offline schema work while Garmit resolves access.
+### Operations and reproducibility
 
-### T1 — Immutable inputs and reviewed context
+- No fourth-party generation or non-allowed image model fallback; one baseline image dispatch and zero hidden retries.
+- Refusals/no-image/corrupt/oversized responses are classified; generated-unscored is never accepted.
+- Crash/resume reuses completed artifacts without repeating paid generation; uncertain remote outcomes stay explicit.
+- Cache invalidation covers source, protected spans, plan, image/reference, rubric, thresholds and model configuration.
+- Missing replay fixtures fail offline. Actual model calls are opt-in and separately budgeted.
+- Repeated-judge stability uses independent calls, not multiple reads of the same cache entry.
 
-Deliver request validation, image normalization, reference/profile artifacts, small reviewed registry and deterministic hashes. CLI validation returns errors before any paid call. Preserve product source details and permit explicit human profile overrides.
+## 5. Data and report requirements
 
-### T2 — Structured ad planner and compiler
+Use a separate development set for prompt/threshold tuning. Keep a held-out set around twenty pipeline outputs for the submission, with mode/length/product/context variation. Preserve every attempted request, including invalid plans and failed generations; show why the output count differs from requests if it does.
 
-Deliver the exact AdPlan contract, semantic validator, template fallback with visible provenance, and two deterministic composition prompts. Compilation and schema validation are pure/offline. The planner cannot change headline or acceptance criteria.
+Have Garmit label source-selection faithfulness and image dimensions separately, blind to machine results. Human expected content permits valid extraction alternatives; do not demand one gold string for all Extract examples. Label any mutation side effects so negatives are not falsely assumed to target only one metric.
 
-### T3 — Candidate generation and records
+Commit curated test images/manifests/labels and recorded observations with rights/provenance. Heavy model weights need pinned downloadable revisions and explicit setup; offline test execution must not make hidden downloads. Do not commit keys, environments or transient bulk runs.
 
-Deliver two independent calls, concurrency cap, dispatch accounting, strict native resolution validation and crash-safe artifact save. Support generation-only output with no false pass. Do not add repair until T4/T5.
+Reports must include dimensional confusion counts, false accepts/rejects, abstention/coverage, undefined metric cases, actual latency/cost, threshold sources and repeat instability. Replay verifies regression; it does not prove a learned judge is correct. No target percentages are achieved by construction.
 
-### T4 — Evaluator adapter and selection
+## 6. Updated initial implementation prompt
 
-Deliver evaluator protocol, fixture-backed offline implementation for control-flow tests, and explicit unknown results in unimplemented live dimensions. Only the actual later evaluator can certify outputs. Fixed index breaks ties among passing candidates.
-
-### T5 — One repair and safe resume
-
-Deliver eligible-failure routing, one linked edit, complete reevaluation, dispatch cap and ambiguous-timeout recovery. Parent artifacts remain untouched. A child can be worse than its parent; the system must record this rather than overwrite evidence.
-
-## 5. Acceptance tests with behavioral value
-
-| ID | Scenario | Expected behavior |
-|---|---|---|
-| A01 | Unsupported market/season or unimplemented profile pair | Explicit validation failure before providers |
-| A02 | `Save 20% — Today!` input | Exact copy persists in request, plan and prompt; punctuation/case unchanged |
-| A03 | Leading space, newline, control override, oversized text | Reject with reason; no automatic rewriting |
-| A04 | Country Japan with English text | Scene resolves for Japan; copy remains English |
-| A05 | Southern-market winter | Winter remains winter; correct reviewed locale profile chosen |
-| A06 | EXIF-rotated JPEG and deceptive extension | Correct orientation/type detection by bytes; hash identifies actual normalized content |
-| A07 | Animated/decompression-bomb/undecodable image | No paid call; explicit input error |
-| A08 | Analyzer guesses unreadable label | Schema permits unknown; review required, guessed label not enforced as truth |
-| A09 | Planner changes copy or chooses unlisted cue | Reject plan; declared template fallback or missing-inventory error |
-| A10 | Planner returns duplicate A/B plans | Validation catches lack of composition diversity; bounded deterministic fallback |
-| A11 | Same inputs/config, different local reference pathname | Same content/plan fingerprint |
-| A12 | Different reference, cue version or headline | Different fingerprint; stale evaluation not reused |
-| A13 | Text-only refusal or multiple final images | No accepted candidate; classify output and record usage |
-| A14 | 1376×768 generated fixture | Strict output rejection, never publish as compliant |
-| A15 | A fails, B reliably passes | Select B; no repair |
-| A16 | A/B both reliably pass | Select A by stable index; completion order irrelevant |
-| A17 | Text-only failure on A; B fails several metrics | One A edit if budget remains; recheck every dimension |
-| A18 | Edited headline fixed but logo changed | Child fails; no selected image unless another candidate already passes |
-| A19 | Degraded/unknown evidence on all viable images | `review_required`; not selected or automatically image-repaired |
-| A20 | Three image dispatches consumed | Fourth impossible, including SDK resubmissions |
-| A21 | Insufficient reserved dollars or expired deadline | Stop before next provider submission; preserve available evidence |
-| A22 | Timeout after dispatch but before receipt | Unknown remote outcome and cost; no silent duplicate |
-| A23 | Crash after image save, before evaluation event | Recover hash-verified image and evaluate it without regenerating |
-| A24 | Two processes resume same run | One acquires run lock; no duplicate dispatch |
-| A25 | Replay fixture missing | Hard cache error, zero network fallback |
-| A26 | Same image, changed thresholds/rubric/reference | Reevaluate or require new matching fixture |
-| A27 | Judge repeat experiment | Independent replicate IDs/calls; cache replay not counted as model stability |
-| A28 | Generation-only mode | Preview plus `generated_unscored`; selected image is null |
-
-Use synthetic provider fixtures for operational edge cases and actual, disclosed recorded responses for evaluator regression. Those are different kinds of evidence. Avoid asserting that an uncalibrated similarity value must pass a real image.
-
-## 6. Pilot request coverage
-
-Use four development cases, not the held-out twenty, to expose problems cheaply:
-
-1. A distinctive labelled bottle, short headline, temperate northern winter.
-2. The same bottle and headline, Australian winter in the explicitly chosen southeast coastal locale.
-3. A differently shaped product with prominent color, Indian summer in a reviewed local setting; headline contains a number and `%`.
-4. A mug or box with readable branding, Japanese autumn locale; English text with punctuation.
-
-These are proposed coverage categories, not already supplied product facts. Garmit picks actual images. Review reference profiles before generating and human-label pilot images before inspecting automated scores.
-
-## 7. Suggested opening instruction in the new repository
-
-> Read AGENTS.md, docs/context/ and docs/design/. Implement only T0–T3 of the generation pipeline initially. Preserve exact ad copy; use separate structured reference analysis and ad planning; use allowed Gemini Flash Image for rendering. Build dry-run and offline fixtures first. Before any live inference, present the concrete call count and estimate against Garmit's approved budget. Return measured provider compatibility, test results, unresolved assumptions and generated previews clearly labelled unscored. Log collaboration and architectural deviations. Do not implement UI or claim evaluator accuracy yet.
-
-## 8. Artifacts needed before submission
-
-Persist all requests and attempts, frozen input/plan/rubric versions, generated images, human labels, recorded evaluations, constructed-negative manifests, failure counts, costs/latencies and the agent-collaboration log. Link the design requirements and actual human revisions in the coding-agent disclosure. Pin dependency/model-weight revisions and document offline fixture setup so a clean clone does not require hidden caches.
+> Read AGENTS.md and docs/design/05, 01 and 04. Implement E0 and the minimal G0 path, then prioritize evaluator E1–E5. Use explicit Exact/Extract modes and source-span-backed TextPlans; freeform text is copy, not visual direction. Evaluate selection fidelity separately from rendered text fidelity. Keep generation to one allowed Gemini image call per request. Use real labelled fixtures plus offline record/replay and code-composed verdicts. Do not implement repair, best-of-N, aesthetic planning or UI yet. Before paid calls show a concrete estimate and use Garmit's approved budget. Record implementation decisions and actual validation in the collaboration log.

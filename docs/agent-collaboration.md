@@ -16,3 +16,12 @@
 - Human changes: repository selection is confirmed; no new architecture or budget approvals were received.
 - Validation: original context integrity and documentation links checked before committing; no application code exists yet.
 - Next: continue generation-design review and authorize an implementation slice separately; enable Gemini billing and source product photos before live testing.
+
+
+## 2026-09-26 — Evaluation-first scope and text semantics, v0.2
+
+- Human instruction: this repository is for implementation too; judges emphasize automated evaluation methods and criteria; generation only needs to function. Freeform input is copy/content, from which relevant parts may be selected, with some text preserved verbatim; evaluate input vs selected/rendered text.
+- Clarification received: Garmit explicitly selected Exact/Extract modes with optional protected phrases.
+- Work performed: introduced the evaluation/text-contract spec; separated source-selection fidelity from image-rendering fidelity; replaced generation-first handoff with evaluator-first tickets; simplified proposed generation to one image; reconciled root instructions, model roles and decision register.
+- Validation: documentation references, current-contract consistency and preserved historical-context integrity checked. No application code, paid inference or empirical accuracy claims added.
+- Design status: explicit priorities/modes confirmed; proposed limits, model choices, matching/calibration details remain subject to pilot evidence. Budget remains unapproved.
