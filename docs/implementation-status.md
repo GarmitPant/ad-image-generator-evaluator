@@ -8,7 +8,7 @@ Checkpoint maintained by the implementing agent. Current human instruction: fini
 |---|---|
 | Design | v0.4, with generation-only implementation corrections documented in the review/runbook |
 | Implementation | Generation v0.1; G0–G8 implemented and verified offline |
-| Local verification | 89 tests passed; Ruff check + format passed; demo/replay/export exercised; Python 3.13.3/macOS. Pre-change commit 4049341 also reproduced green on a clean clone with Python 3.11 (CI steps) |
+| Local verification | 90 tests passed; Ruff check + format passed; demo/replay/export exercised; Python 3.13.3/macOS. Pre-change commit 4049341 also reproduced green on a clean clone with Python 3.11 (CI steps) |
 | Reference smoke runs | Three-reference Heineken Exact: 3 synthetic candidates; single-reference bottle Extract: 2 synthetic candidates; all saved |
 | Provider evidence | Real SDK serialization/deserialization through mocked HTTP transports; no provider network inference |
 | Paid usage this checkpoint | $0; no live calls; credentials not required or supplied to tests |
@@ -51,3 +51,4 @@ The two repository-photo smoke runs used **SyntheticProvider**, not visual analy
 - 2026-09-26 — Garmit requested review and generation implementation, then explicitly selected offline-only work. G0–G8 implemented in this checkpoint with tests and runbook. No evaluator or UI added.
 - 2026-09-26 — Local budget cap removed at Garmit's direction (Claude Code): migration 002, no `--budget-usd`, no reservations; `--allow-paid`, dispatch-before-send, unknown-never-resent and usage-based report-only cost kept. 89 tests pass.
 - 2026-09-26 — First live run (Ray-Ban, AU summer, Extract, 2 candidates) succeeded; curated into `data/live-runs/` with empty human-label template. c2 shows a naturally occurring duplicated-text rendering failure.
+- 2026-09-26 — Fixed nondeterministic reference normalization (af75a71). Behaviour-preserving refactor of pipeline/CLI/zones verified by identical content-addressed run signature; 90 tests pass.

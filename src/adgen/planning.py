@@ -1,23 +1,9 @@
 import json
 import re
 
-from .contracts import CreativePlan
+from .contracts import ZONE_CELLS, CreativePlan
 from .text import text_shape
 from .util import canonical
-
-ZONE_CELLS = {
-    **{
-        f"{vertical}_{horizontal}": {row * 3 + col}
-        for row, vertical in enumerate(("top", "middle", "bottom"))
-        for col, horizontal in enumerate(("left", "center", "right"))
-    },
-    "top_band": {0, 1, 2},
-    "middle_band": {3, 4, 5},
-    "bottom_band": {6, 7, 8},
-    "left_third": {0, 3, 6},
-    "center_third": {1, 4, 7},
-    "right_third": {2, 5, 8},
-}
 
 
 def planner_prompt(profile, context, text_plan, policy, previous, feedback=None):

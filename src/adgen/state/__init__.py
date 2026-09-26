@@ -22,6 +22,13 @@ class StageFailed(RuntimeError):
     pass
 
 
+def failure(exc):
+    """(status, code) for a failed step. Only our own exceptions' messages are recorded:
+    SDK exception text can contain request headers or confidential copy."""
+    code = str(exc) if isinstance(exc, (Blocked, StageFailed)) else type(exc).__name__
+    return ("blocked" if isinstance(exc, Blocked) else "failed"), code
+
+
 class State:
     def __init__(self, path):
         self.path = Path(path).resolve()
@@ -247,11 +254,10 @@ class State:
             self.event(run_id, "stage_succeeded", {"stage": name}, exec_id)
             return result, sha
         except Exception as exc:
-            # Exception text may include SDK request headers or supplied sensitive copy.
-            code = str(exc) if isinstance(exc, (Blocked, StageFailed)) else type(exc).__name__
+            status, code = failure(exc)
             self.write(
                 "UPDATE stage_execution SET status=?,error_code=?,ended_at=? WHERE exec_id=?",
-                ("blocked" if isinstance(exc, Blocked) else "failed", code, now(), exec_id),
+                (status, code, now(), exec_id),
             )
             self.event(run_id, "stage_failed", {"stage": name, "code": code}, exec_id)
             raise

@@ -91,23 +91,22 @@ class ProductProfile(Contract):
     age_restricted: bool
 
 
-Zone = Literal[
-    "top_left",
-    "top_center",
-    "top_right",
-    "middle_left",
-    "middle_center",
-    "middle_right",
-    "bottom_left",
-    "bottom_center",
-    "bottom_right",
-    "top_band",
-    "middle_band",
-    "bottom_band",
-    "left_third",
-    "center_third",
-    "right_third",
-]
+# Layout zones on a 3x3 grid (cells 0-8, row-major). The single source for both the
+# schema enum and overlap checks; key order is the enum order sent to the planner.
+ZONE_CELLS = {
+    **{
+        f"{vertical}_{horizontal}": {row * 3 + col}
+        for row, vertical in enumerate(("top", "middle", "bottom"))
+        for col, horizontal in enumerate(("left", "center", "right"))
+    },
+    "top_band": {0, 1, 2},
+    "middle_band": {3, 4, 5},
+    "bottom_band": {6, 7, 8},
+    "left_third": {0, 3, 6},
+    "center_third": {1, 4, 7},
+    "right_third": {2, 5, 8},
+}
+Zone = Literal[tuple(ZONE_CELLS)]
 
 
 class Lighting(Contract):

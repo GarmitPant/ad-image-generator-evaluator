@@ -55,6 +55,23 @@ def parser():
     return root
 
 
+def error_payload(exc, run_id):
+    if isinstance(exc, (Blocked, StageFailed)):
+        return {"error": str(exc), "run_id": run_id}
+    if isinstance(exc, ValidationError):
+        # No input values in diagnostics (source text may be confidential).
+        details = [
+            {"location": list(e["loc"]), "type": e["type"]}
+            for e in exc.errors(include_input=False, include_url=False)
+        ]
+        return {"error": "validation_failed", "details": details, "run_id": run_id}
+    return {
+        "error": type(exc).__name__,
+        "run_id": run_id,
+        "hint": "Check input files, image limits, protected spans and text capacity; no exception payload is logged.",
+    }
+
+
 def main(argv=None):
     args = parser().parse_args(argv)
     state = None
@@ -124,34 +141,8 @@ def main(argv=None):
         if summary["status"] != "generated_unscored":
             return 2
         return 0 if all(c["status"] == "generated_unscored" for c in summary["candidates"]) else 3
-    except (Blocked, StageFailed) as exc:
-        print(json.dumps({"error": str(exc), "run_id": getattr(pipeline, "run_id", None)}))
-        return 2
-    except ValidationError as exc:
-        # No input values in diagnostics (source text may be confidential).
-        print(
-            json.dumps(
-                {
-                    "error": "validation_failed",
-                    "details": [
-                        {"location": list(e["loc"]), "type": e["type"]}
-                        for e in exc.errors(include_input=False, include_url=False)
-                    ],
-                    "run_id": getattr(pipeline, "run_id", None),
-                }
-            )
-        )
-        return 2
-    except (OSError, ValueError) as exc:
-        print(
-            json.dumps(
-                {
-                    "error": type(exc).__name__,
-                    "run_id": getattr(pipeline, "run_id", None),
-                    "hint": "Check input files, image limits, protected spans and text capacity; no exception payload is logged.",
-                }
-            )
-        )
+    except (Blocked, StageFailed, OSError, ValueError) as exc:
+        print(json.dumps(error_payload(exc, getattr(pipeline, "run_id", None))))
         return 2
     finally:
         if state:

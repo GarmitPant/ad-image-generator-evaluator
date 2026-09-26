@@ -1,4 +1,5 @@
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -9,9 +10,46 @@ from .context import resolve_context
 from .contracts import AdRequest, CopySelection, CreativePlan, GuardrailReview, ProductProfile
 from .planning import compile_prompt, keyword_review, planner_prompt, review_prompt, validate_plan
 from .providers import Gateway, LiveProvider, recorded_calls
-from .state import Blocked, StageFailed
+from .state import Blocked, StageFailed, failure
 from .text import exact_selection, freeze_selection, source_contract
 from .util import atomic_write, canonical, fingerprint
+
+INVALID_PLAN = "creative_plan_invalid"
+# Also accept the exception-name codes persisted by earlier versions, so old runs still resume.
+INVALID_PLAN_CODES = {INVALID_PLAN, "ValueError", "ValidationError"}
+SCHEMA_FEEDBACK = {
+    "verdict": "reject",
+    "reasons": [
+        {
+            "rule_id": "SCHEMA",
+            "explanation": "Previous plan failed schema, block coverage or nonoverlapping layout validation. Follow the declared schema and grid precisely.",
+        }
+    ],
+}
+
+
+@dataclass(frozen=True)
+class Shared:
+    """Request-level stage results reused by every candidate."""
+
+    profile: dict
+    profile_sha: str
+    context: dict
+    context_sha: str
+    text_plan: dict
+    text_sha: str
+    intake_sha: str
+    reference_hashes: list
+
+
+def generated(candidates):
+    return any(c["status"] == "generated_unscored" for c in candidates)
+
+
+def run_status(candidates):
+    if generated(candidates):
+        return "succeeded"
+    return "blocked" if any(c["status"] == "blocked" for c in candidates) else "failed"
 
 
 def product_prompt():
@@ -40,13 +78,8 @@ class Pipeline:
             raise Blocked("live_backend_forbidden_in_replay")
         if mode not in {"live", "replay"}:
             raise ValueError("invalid mode")
-        self.state, self.config, self.policy, self.backend, self.mode = (
-            state,
-            config,
-            policy,
-            backend,
-            mode,
-        )
+        self.state, self.config, self.policy = state, config, policy
+        self.backend, self.mode = backend, mode
         self.key = fingerprint({"effective_config": config_hash(config, policy), "mode": mode})
 
     def run(self, request: AdRequest, base: Path, *, run_id=None):
@@ -67,24 +100,11 @@ class Pipeline:
         with self.state.lock(run_id):
             try:
                 summary = self._execute(request, refs, contract)
-                count = sum(c["status"] == "generated_unscored" for c in summary["candidates"])
-                status = (
-                    "succeeded"
-                    if count
-                    else (
-                        "blocked"
-                        if any(c["status"] == "blocked" for c in summary["candidates"])
-                        else "failed"
-                    )
-                )
-                self.state.finish(
-                    run_id, status, "generated_unscored" if count else "no_usable_candidates"
-                )
+                self.state.finish(run_id, run_status(summary["candidates"]), summary["status"])
                 export_run(self.state, run_id, summary=summary)
                 return summary
             except Exception as exc:
-                code = str(exc) if isinstance(exc, (Blocked, StageFailed)) else type(exc).__name__
-                self.state.finish(run_id, "blocked" if isinstance(exc, Blocked) else "failed", code)
+                self.state.finish(run_id, *failure(exc))
                 raise
 
     def stage(self, name, inputs, fn, **kwargs):
@@ -99,11 +119,9 @@ class Pipeline:
             canonical({"config": self.config.model_dump(), "policy": self.policy}),
             "effective_config",
         )
-        original_hashes = []
-        for ref in refs:
-            original_hashes.append(
-                state.artifact(ref["original"], "reference_original", "human_supplied")
-            )
+        original_hashes = [
+            state.artifact(ref["original"], "reference_original", "human_supplied") for ref in refs
+        ]
         intake_inputs = {
             "request": request_sha,
             "config": config_sha,
@@ -160,73 +178,25 @@ class Pipeline:
             ),
             cache=True,
         )
+        shared = Shared(
+            profile,
+            profile_sha,
+            context,
+            context_sha,
+            text_plan,
+            text_sha,
+            intake_sha,
+            reference_hashes,
+        )
         previous = []
         for index in range(1, request.n_candidates + 1):
             try:
-                plan, plan_sha, guardrail_sha, guardrail_status = self._plan_candidate(
-                    index, profile, profile_sha, context, context_sha, text_plan, text_sha, previous
-                )
-                previous.append(
-                    {
-                        "setting": plan["setting"],
-                        "lighting": plan["lighting"],
-                        "product_placement": plan["product_placement"],
-                    }
-                )
-                prompt_result, prompt_sha = self.stage(
-                    "prompt_compilation",
-                    {
-                        "profile": profile_sha,
-                        "context": context_sha,
-                        "text": text_sha,
-                        "plan": plan_sha,
-                        "guardrails": guardrail_sha,
-                    },
-                    lambda _: {
-                        "version": "prompt/1",
-                        "prompt": compile_prompt(profile, context, plan, text_plan, self.policy),
-                    },
-                    candidate=index,
-                )
-                image_result, image_sha = self.stage(
-                    "image_generation",
-                    {"prompt": prompt_sha, "intake": intake_sha},
-                    lambda exec_id: self.gateway.call(
-                        exec_id, "image", prompt_result["prompt"], refs=reference_hashes
-                    ),
-                    candidate=index,
-                )
-
-                def output_gate(exec_id):
-                    if len(image_result["images"]) != 1:
-                        raise StageFailed("expected_one_image")
-                    raw_sha = image_result["images"][0]
-                    normalized, metadata = normalize_image(state.read(raw_sha), reference=False)
-                    sha = state.artifact(
-                        normalized, "image", "model" if self.mode == "live" else "external"
-                    )
-                    state.link(exec_id, raw_sha, "input", "provider_image")
-                    state.link(exec_id, sha, "output", "published_image")
-                    return {
-                        "image_artifact": sha,
-                        "provider_image_artifact": raw_sha,
-                        **metadata,
-                        "status": "generated_unscored",
-                        "provenance": image_result["metadata"].get("provenance", "recorded"),
-                    }
-
-                gated, _ = self.stage(
-                    "output_gate", {"response": image_sha}, output_gate, candidate=index
-                )
-                state.write(
-                    "UPDATE candidate SET status='generated_unscored',guardrail_status=?,image_artifact=?,error_code=NULL WHERE run_id=? AND candidate_index=?",
-                    (guardrail_status, gated["image_artifact"], self.run_id, index),
-                )
+                self._run_candidate(index, shared, previous)
             except Exception as exc:
-                code = str(exc) if isinstance(exc, (Blocked, StageFailed)) else type(exc).__name__
+                status, code = failure(exc)
                 state.write(
                     "UPDATE candidate SET status=?,error_code=? WHERE run_id=? AND candidate_index=?",
-                    ("blocked" if isinstance(exc, Blocked) else "failed", code, self.run_id, index),
+                    (status, code, self.run_id, index),
                 )
                 state.event(self.run_id, "candidate_failed", {"candidate": index, "code": code})
         candidates = state.rows(
@@ -248,9 +218,7 @@ class Pipeline:
                 "run_id": self.run_id,
                 "request_id": request.request_id,
                 "mode": self.mode,
-                "status": "generated_unscored"
-                if any(c["image_artifact"] for c in candidates)
-                else "no_usable_candidates",
+                "status": "generated_unscored" if generated(candidates) else "no_usable_candidates",
                 "evaluation_performed": False,
                 "winner": None,
                 "candidates": candidates,
@@ -262,6 +230,69 @@ class Pipeline:
         )
         return summary
 
+    def _run_candidate(self, index, shared, previous):
+        """Plan, compile, generate and gate one candidate; failures are isolated by the caller."""
+        state = self.state
+        plan, plan_sha, guardrail_sha, guardrail_status = self._plan_candidate(
+            index, shared, previous
+        )
+        previous.append(
+            {
+                "setting": plan["setting"],
+                "lighting": plan["lighting"],
+                "product_placement": plan["product_placement"],
+            }
+        )
+        prompt_result, prompt_sha = self.stage(
+            "prompt_compilation",
+            {
+                "profile": shared.profile_sha,
+                "context": shared.context_sha,
+                "text": shared.text_sha,
+                "plan": plan_sha,
+                "guardrails": guardrail_sha,
+            },
+            lambda _: {
+                "version": "prompt/1",
+                "prompt": compile_prompt(
+                    shared.profile, shared.context, plan, shared.text_plan, self.policy
+                ),
+            },
+            candidate=index,
+        )
+        image_result, image_sha = self.stage(
+            "image_generation",
+            {"prompt": prompt_sha, "intake": shared.intake_sha},
+            lambda exec_id: self.gateway.call(
+                exec_id, "image", prompt_result["prompt"], refs=shared.reference_hashes
+            ),
+            candidate=index,
+        )
+
+        def output_gate(exec_id):
+            if len(image_result["images"]) != 1:
+                raise StageFailed("expected_one_image")
+            raw_sha = image_result["images"][0]
+            normalized, metadata = normalize_image(state.read(raw_sha), reference=False)
+            sha = state.artifact(
+                normalized, "image", "model" if self.mode == "live" else "external"
+            )
+            state.link(exec_id, raw_sha, "input", "provider_image")
+            state.link(exec_id, sha, "output", "published_image")
+            return {
+                "image_artifact": sha,
+                "provider_image_artifact": raw_sha,
+                **metadata,
+                "status": "generated_unscored",
+                "provenance": image_result["metadata"].get("provenance", "recorded"),
+            }
+
+        gated, _ = self.stage("output_gate", {"response": image_sha}, output_gate, candidate=index)
+        state.write(
+            "UPDATE candidate SET status='generated_unscored',guardrail_status=?,image_artifact=?,error_code=NULL WHERE run_id=? AND candidate_index=?",
+            (guardrail_status, gated["image_artifact"], self.run_id, index),
+        )
+
     def _synthetic_provenance(self):
         receipts = recorded_calls(self.state, self.run_id)
         return any(
@@ -269,64 +300,47 @@ class Pipeline:
             for row in receipts
         )
 
-    def _plan_candidate(
-        self, index, profile, profile_sha, context, context_sha, text_plan, text_sha, previous
-    ):
+    def _plan_candidate(self, index, shared, previous):
+        profile, context, text_plan = shared.profile, shared.context, shared.text_plan
         previous_sha = self.state.artifact(canonical(previous), "prior_candidate_summaries")
         feedback = None
         for attempt in (1, 2):
             feedback_sha = self.state.artifact(canonical(feedback), "replan_feedback")
             inputs = {
-                "profile": profile_sha,
-                "context": context_sha,
-                "text": text_sha,
+                "profile": shared.profile_sha,
+                "context": shared.context_sha,
+                "text": shared.text_sha,
                 "previous": previous_sha,
                 "feedback": feedback_sha,
             }
 
             def plan_call(exec_id):
-                result = self.gateway.structured(
-                    exec_id,
-                    "plan",
-                    planner_prompt(profile, context, text_plan, self.policy, previous, feedback),
-                    CreativePlan,
-                    self.config.planner_effort,
-                )
-                return validate_plan(CreativePlan.model_validate(result), text_plan)
+                try:
+                    result = self.gateway.structured(
+                        exec_id,
+                        "plan",
+                        planner_prompt(
+                            profile, context, text_plan, self.policy, previous, feedback
+                        ),
+                        CreativePlan,
+                        self.config.planner_effort,
+                    )
+                    return validate_plan(CreativePlan.model_validate(result), text_plan)
+                except (ValueError, ValidationError) as exc:
+                    raise StageFailed(INVALID_PLAN) from exc
 
             try:
                 plan, plan_sha = self.stage(
                     "creative_planning", inputs, plan_call, candidate=index, attempt=attempt
                 )
-            except (ValueError, ValidationError) as exc:
-                if attempt == 2:
-                    raise StageFailed("creative_plan_invalid_twice") from exc
-                feedback = {
-                    "verdict": "reject",
-                    "reasons": [
-                        {
-                            "rule_id": "SCHEMA",
-                            "explanation": "Previous plan failed schema, block coverage or nonoverlapping layout validation. Follow the declared schema and grid precisely.",
-                        }
-                    ],
-                }
-                continue
             except StageFailed as exc:
-                # Resume a previously persisted validation failure using the same documented replan.
-                if str(exc) in {"ValueError", "ValidationError"} and attempt == 1:
-                    feedback = {
-                        "verdict": "reject",
-                        "reasons": [
-                            {
-                                "rule_id": "SCHEMA",
-                                "explanation": "Previous plan failed schema, block coverage or nonoverlapping layout validation. Follow the declared schema and grid precisely.",
-                            }
-                        ],
-                    }
-                    continue
-                if str(exc) in {"ValueError", "ValidationError"} and attempt == 2:
-                    raise StageFailed("creative_plan_invalid_twice") from exc
-                raise
+                # A fresh failure and a persisted one (on resume) take the same single replan.
+                if str(exc) not in INVALID_PLAN_CODES:
+                    raise
+                if attempt == 2:
+                    raise StageFailed(INVALID_PLAN + "_twice") from exc
+                feedback = SCHEMA_FEEDBACK
+                continue
 
             def review_call(exec_id):
                 review = self.gateway.structured(
@@ -349,7 +363,7 @@ class Pipeline:
 
             review, review_sha = self.stage(
                 "plan_guardrails",
-                {"plan": plan_sha, "context": context_sha, "profile": profile_sha},
+                {"plan": plan_sha, "context": shared.context_sha, "profile": shared.profile_sha},
                 review_call,
                 candidate=index,
                 attempt=attempt,
