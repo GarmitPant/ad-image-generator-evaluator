@@ -2,7 +2,7 @@
 
 **Design draft · reviewed against commit `441eff7` · batch results pending**
 
-This document explains the engineering choices. The [evaluation report](submission/report.md) supplies measured results, the [contact sheet](submission/contact-sheet.html) shows the images, and the [README](README.md) covers setup and commands.
+This document explains the engineering choices. A deliberate architectural decision is to make execution state and evidence traceable: every candidate and judgment should be inspectable through the inputs, model calls and artifacts that produced it. The [evaluation report](submission/report.md) supplies measured results, the [contact sheet](submission/contact-sheet.html) shows the images, and the [README](README.md) covers setup and commands.
 
 ## 1. Problem and success criteria
 
@@ -28,12 +28,14 @@ Local OCR + product detection + embeddings + LLM judge
 Code composes verdicts → ranks candidates → exports images and evidence
 ```
 
-SQLite records stages, model calls, versions and artifact hashes throughout. Evaluation can also run on saved generations, so evaluator changes do not require new image-generation calls.
+**The state store underpins the entire flow.** Each stage records its inputs, execution status and outputs in SQLite, with artifacts stored as hashed files. This makes the pipeline inspectable and recoverable at stage boundaries. Evaluation can run on saved generations, so evaluator changes do not require new image-generation calls.
 
 ## 3. Decisions and rationale
 
 | Decision | Why it matters |
 |---|---|
+| SQLite as the shared execution record | Generation, evaluation and reporting use one persistent record of what ran and what it produced. Transactions, foreign keys and local locking support consistency without a separate database service. |
+| Explicit artifact lineage | Connect each output and judgment to its inputs, versions and evidence, so failures can be investigated and evaluator changes compared on the same images. |
 | Separate copy selection from visual planning | User text is content to render, not instructions for the scene. The planner sees copy roles and lengths, never its wording. |
 | Exact or source-span Extract | Exact retains the input; Extract chooses original substrings with protected phrases. This prevents paraphrasing, but a separate semantic check must catch misleading omissions. |
 | Shared analysis, separate candidate plans | Analyze all product references once, then produce distinct compositions without repeating shared work. |
@@ -69,11 +71,28 @@ Before generation, keyword checks and a model reviewer inspect the plan. One rep
 
 The pilot exposed evaluator failures, not generation failures: all six pilot ads were correct, but three were falsely rejected. Overlapping OCR boxes split a headline, wrapped copy exceeded the line-matching limit, and bottle-label text was mistaken for extra ad copy. A revised evaluator adjusted line grouping, wrapping and label exclusion, and the three cases became regression fixtures. The pilot images were then re-scored without regeneration. These changes demonstrate debugging against evidence; they do not establish evaluator accuracy.
 
-## 6. Traceability and failure handling
+## 6. State store, traceability and recovery
 
-Inputs, prompts, reference renditions, images and evaluation evidence are hashed and linked to their stages. Evaluator-versioned stages permit rescoring saved images. Replay supports offline regression tests without provider calls.
+**Persistence is part of the pipeline design, not just logging added at the end.** Generation is stochastic and evaluation is fallible. A final image and score alone cannot explain whether a problem came from copy selection, planning, rendering or the evaluator. The state store preserves the intermediate evidence needed to investigate that distinction.
 
-Provider dispatch is recorded before sending. Calls with uncertain outcomes are not silently resent, and SDK retries are disabled. Individual candidate failures are retained. Cost estimates are report-only; account-level controls govern spending. These choices favor an auditable local workflow over distributed production infrastructure.
+SQLite holds run, stage, candidate, model-call, evaluation and selection records. Larger artifacts live in content-addressed files; their SHA-256 identifiers connect them to the stages that consumed or produced them. This separates execution metadata from image and evidence storage while retaining an explicit chain:
+
+```text
+Request + references → selected copy + plan + prompt → candidate image
+Candidate image + evaluator configuration → evidence + verdict → ranking
+```
+
+| Deliberate mechanism | Engineering benefit |
+|---|---|
+| Stage input fingerprints and artifact hash checks | Reuse completed work only when its recorded inputs/configuration match; detect changed or corrupted artifacts. |
+| Recorded model requests, receipts, usage and returned model IDs | Inspect what was asked, what was returned and the estimated cost of that execution. |
+| Versioned evaluation stages | Re-score identical saved images with a revised evaluator while retaining earlier evaluation records. This was used for the pilot corrections. |
+| Recorded responses and offline replay | Reproduce downstream behavior for regression tests without another stochastic or paid provider call. |
+| Per-candidate state and evidence exports | Keep successful images when another candidate fails, and connect report verdicts to detailed evidence. |
+
+Provider dispatch is committed before sending. If a call's outcome is uncertain after interruption, it is not automatically resent; SDK retries are disabled. Local locks protect concurrent execution of the same run. This is stage-level recovery, not a distributed queue or an exactly-once guarantee. Cost estimates are report-only; spending controls remain on provider accounts.
+
+Traceability makes decisions explainable and experiments repeatable on recorded evidence. It does **not** make the evaluator's judgments correct or guarantee identical images from a fresh generation call.
 
 ## 7. Results to attach after the batch
 
