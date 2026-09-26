@@ -102,3 +102,10 @@
 - Fixes (evaluator/3): allow slightly overlapping line boxes; blocks may span up to 6 lines; label text is excluded using all raw detections; the detector prompt drops parentheticals ("beer (alcoholic lager)" → "beer"); count threshold 0.4 with overlapping boxes de-duplicated; outcome-specific reasons. Evaluation stages are now versioned (`evaluation@evaluator/3`), so existing runs are re-scored with `adgen evaluate` without regenerating.
 - Validation: 123 tests, including the three genuine pilot false rejects recorded as fixtures (`tests/fixtures/pilot_false_rejects.json`).
 - Methodology note: this change was made after inspecting pilot results, so the two pilot requests are development data for the evaluator, not held out; the report must say so.
+
+## 2026-09-26 — Submission design draft (Codex)
+
+- Human instruction: review the completed implementation and plan a concise, understandable design document while the report batch runs.
+- Work: reviewed current generation/evaluation code, policy, ranking, reporting and pilot history at commit 441eff7; created root DESIGN.md as a compact draft covering decisions, evidence, challenges, limitations and coding-agent disclosure. Results remain pending and link to the generated submission bundle.
+- Reporting corrections captured: planned set is 9 requests/27 images; older coverage counts are stale; pilot requests informed evaluator/3 and are not held out; no human-label accuracy claim. Documented actual product-count corroboration and OCR failure behavior rather than stronger README shorthand.
+- Validation: checked technical claims against source. No pipeline/config changes, inference, batch restart or report overwrite.

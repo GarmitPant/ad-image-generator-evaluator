@@ -6,6 +6,8 @@ Generates display-ad images from a product photo, a target country, a season and
 - **Evaluation:** every image is checked for text accuracy, product fidelity and context. Local vision models (OCR, object detection, image embeddings) do the measuring, and an **LLM-as-judge** (a multimodal OpenAI model that sees the reference photos and the ad) answers narrow yes/no questions. Pass or fail is always decided in code, never by the LLM.
 - **Output:** a ranked set of candidates per request, the winning `best.png`, and a human-readable evaluation report with evidence for every image.
 
+**Design and rationale:** see [DESIGN.md](DESIGN.md) for why the pipeline and evaluator are built this way, the trade-offs, and the limitations. **Results:** see [submission/report.md](submission/report.md).
+
 ## How it works
 
 ```text
@@ -33,7 +35,7 @@ Each image gets **PASS**, **FAIL** or **UNSURE** in four dimensions. It passes o
 |---|---|
 | Text selection (input → copy) | Copy is an exact excerpt of the input; protected phrases kept whole; fits the ad; in Extract mode, the LLM judge checks that meaning is preserved (no lost "not" or "up to") and nothing essential is dropped. A failure counts only if it quotes the input |
 | Text rendering (copy → image) | OCR reads the image **without being told the expected text**. Every copy line must appear exactly once, spelled exactly, with no duplicated or extra ad text. Text printed on the product itself is ignored |
-| Product | Exactly one product (detector and LLM judge must agree); the LLM judge compares type, shape, colours and materials, distinctive parts and branding with the reference photos. Position and viewing angle are not judged |
+| Product | Exactly one product: the LLM judge must count exactly one and the detector must find at least one; the LLM judge compares type, shape, colours and materials, distinctive parts and branding with the reference photos. Position and viewing angle are not judged |
 | Context | LLM judge: scene fits the season and is plausible for the country; no out-of-season elements; no flags, caricature, religious imagery or irresponsible alcohol depiction |
 
 Candidates are ranked by: verdict → number of failed checks → score → whether the country is recognisable → visual similarity of the product to the reference → candidate number. Scores only break ties; a high score never outranks a failed check.
@@ -41,6 +43,7 @@ Candidates are ranked by: verdict → number of failed checks → score → whet
 ## Repository layout
 
 ```text
+DESIGN.md            design decisions, evaluation method, trade-offs and limitations
 src/adgen/           pipeline, CLI and evaluator (src/adgen/eval/)
 config/              pipeline.toml (models, timeouts, prices) · evaluator.toml (local models, thresholds)
 policy/              guardrails.yaml: content rules applied to every country
