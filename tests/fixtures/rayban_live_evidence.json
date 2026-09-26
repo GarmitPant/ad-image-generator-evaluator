@@ -1,0 +1,193 @@
+{
+ "source": "Recorded 2026-09-26 with LocalVision (PP-OCRv6 medium; grounding-dino-tiny a2bb814d) on the live Ray-Ban candidates in data/live-runs/2026-09-26-rayban-au-summer-extract. Genuine evidence, not synthetic.",
+ "candidates": {
+  "c1": {
+   "ocr": {
+    "lines": [
+     {
+      "text": "classic black frames",
+      "score": 0.9999,
+      "box": [
+       56,
+       52,
+       618,
+       112
+      ]
+     },
+     {
+      "text": "Polarized lenses.",
+      "score": 0.9994,
+      "box": [
+       750,
+       65,
+       966,
+       95
+      ]
+     },
+     {
+      "text": "Built for",
+      "score": 0.982,
+      "box": [
+       748,
+       225,
+       971,
+       287
+      ]
+     },
+     {
+      "text": "bright days.",
+      "score": 1.0,
+      "box": [
+       644,
+       292,
+       971,
+       358
+      ]
+     },
+     {
+      "text": "PorBum P",
+      "score": 0.7407,
+      "box": [
+       452,
+       526,
+       522,
+       569
+      ]
+     },
+     {
+      "text": "Free returns within 30 days on all orders placed online.",
+      "score": 0.9928,
+      "box": [
+       164,
+       967,
+       857,
+       997
+      ]
+     }
+    ]
+   },
+   "detect": {
+    "boxes": [
+     {
+      "score": 0.9677,
+      "box": [
+       177,
+       397,
+       961,
+       699
+      ]
+     }
+    ]
+   }
+  },
+  "c2": {
+   "ocr": {
+    "lines": [
+     {
+      "text": "classic black frames",
+      "score": 0.9998,
+      "box": [
+       97,
+       42,
+       926,
+       132
+      ]
+     },
+     {
+      "text": "Polarized",
+      "score": 1.0,
+      "box": [
+       38,
+       483,
+       153,
+       511
+      ]
+     },
+     {
+      "text": "Built for",
+      "score": 1.0,
+      "box": [
+       887,
+       481,
+       985,
+       512
+      ]
+     },
+     {
+      "text": "lenses.",
+      "score": 0.9998,
+      "box": [
+       36,
+       514,
+       128,
+       542
+      ]
+     },
+     {
+      "text": "PoBoan",
+      "score": 0.4205,
+      "box": [
+       349,
+       512,
+       378,
+       537
+      ]
+     },
+     {
+      "text": "bright days.",
+      "score": 1.0,
+      "box": [
+       840,
+       514,
+       985,
+       545
+      ]
+     },
+     {
+      "text": "Bey Bonr P",
+      "score": 0.6173,
+      "box": [
+       443,
+       513,
+       497,
+       546
+      ]
+     },
+     {
+      "text": "Built for bright days.",
+      "score": 1.0,
+      "box": [
+       740,
+       662,
+       983,
+       695
+      ]
+     },
+     {
+      "text": "Free returns within 30 days on all orders placed online.",
+      "score": 0.9998,
+      "box": [
+       86,
+       933,
+       934,
+       971
+      ]
+     }
+    ]
+   },
+   "detect": {
+    "boxes": [
+     {
+      "score": 0.9699,
+      "box": [
+       215,
+       398,
+       816,
+       651
+      ]
+     }
+    ]
+   }
+  }
+ }
+}

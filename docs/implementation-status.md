@@ -29,7 +29,7 @@ Specs: docs/design/05 §5–7 (text, product = same-object P1–P6, context, com
 | Step | Deliverable | Status |
 |---|---|---|
 | EV1 | Vision backends + evidence recording + `config/evaluator.toml` + `[eval]` extra | **done** — LocalVision verified on real images (OCR ~6 s, detect ~2.5 s, embed <0.3 s after load). PaddleOCR 3.7 defaults to PP-OCRv6; pinned explicitly |
-| EV2 | Text evaluation: selection checks (structural + extract-mode judge) and rendering (OCR line grouping, one-to-one segment matching, CER/WER, duplicate/extra text, product-label exclusion) | pending |
+| EV2 | Text evaluation (`eval/text_eval.py`, `eval/compose.py`, `eval/judge.py` selection schema) | **done** — tests on genuine recorded OCR/detection of live c1 (pass) and c2 (duplicate caught) in `tests/fixtures/rayban_live_evidence.json`. Deferred: blind judge fallback reader when OCR is uncertain (returns unknown instead) |
 | EV3 | Visual judge (product P1–P6 + context + image guardrails, one call per candidate), composition, scores, ranking rule | pending |
 | EV4 | Pipeline integration: evaluation stage per candidate, selection, migration 003 (evaluation/selection tables), export best.png, CLI `generate` (evaluates by default; `--skip-evaluation`), `evaluate RUN_ID…`, demo with synthetic vision, vision fixtures in export/replay | pending |
 | EV5 | `adgen report`: submission bundle and human-label agreement (labels CSV) | pending |
