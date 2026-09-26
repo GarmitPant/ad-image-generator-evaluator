@@ -1,4 +1,4 @@
-"""Reproducible submission bundle built only from the state store and human labels (no model calls)."""
+"""Human-readable evaluation bundle built only from the state store (no model calls)."""
 
 import csv
 import html
@@ -11,8 +11,6 @@ from pathlib import Path
 from ..util import atomic_write, canonical
 
 DIMENSIONS = ("text_selection", "text_rendering", "product", "context")
-LABEL_DIMENSIONS = ("overall", *DIMENSIONS, "region")
-LABEL_COLUMN = {"overall": "overall_verdict", "region": "region_recognisable"}
 
 
 def _seconds(start, end):
@@ -90,6 +88,7 @@ def collect(state, run_ids=None, include_synthetic=False):
         requests.append(
             {
                 "reference_renditions": reference_shas,
+                "ranking": json.loads(snap["selection"]["ranking"]) if snap["selection"] else None,
                 "run_id": run["run_id"],
                 "request": request,
                 "mode": run["mode"],
@@ -171,6 +170,7 @@ def collect(state, run_ids=None, include_synthetic=False):
                     )
                     if record
                     else None,
+                    "product": (result("product_analysis") or {}).get("category"),
                     "source_text": request["text"]["source_text"],
                     "selected_copy": [b["text"] for b in text_plan["blocks"]]
                     if text_plan
@@ -210,62 +210,62 @@ def collect(state, run_ids=None, include_synthetic=False):
     return rows, requests
 
 
-def read_labels(path, rows):
-    if not path or not Path(path).exists():
-        return []
-    labels = []
-    for line in csv.DictReader(Path(path).open()):
-        matches = [
-            r
-            for r in rows
-            if r["run_id"].startswith(line["run_id"])
-            and r["candidate_index"] == int(line["candidate_index"])
-        ]
-        if (
-            len(matches) == 1
-            and line["dimension"] in LABEL_DIMENSIONS
-            and line["label"] in {"pass", "fail"}
-        ):
-            labels.append({**line, "row": matches[0]})
-    return labels
-
-
-def agreement(labels):
-    """Positive class = defect (fail). Unknown automated verdicts are abstentions, reported separately."""
-    out = {}
-    for dim in LABEL_DIMENSIONS:
-        column = LABEL_COLUMN.get(dim, f"{dim}_verdict")
-        items = [(lab["label"], lab["row"][column]) for lab in labels if lab["dimension"] == dim]
-        if not items:
-            continue
-        tp = sum(h == "fail" and a == "fail" for h, a in items)
-        fp = sum(h == "pass" and a == "fail" for h, a in items)
-        fn = sum(h == "fail" and a == "pass" for h, a in items)
-        tn = sum(h == "pass" and a == "pass" for h, a in items)
-        n = tp + fp + fn + tn
-        po = (tp + tn) / n if n else None
-        pe = (((tp + fp) * (tp + fn) + (fn + tn) * (fp + tn)) / n**2) if n else None
-        kappa = round((po - pe) / (1 - pe), 3) if n and pe is not None and pe < 1 else None
-        out[dim] = {
-            "labelled": len(items),
-            "abstained": len(items) - n,
-            "tp": tp,
-            "fp_false_reject": fp,
-            "fn_false_accept": fn,
-            "tn": tn,
-            "agreement": round(po, 3) if po is not None else None,
-            "cohens_kappa": kappa,
-            "fail_precision": round(tp / (tp + fp), 3) if tp + fp else None,
-            "fail_recall": round(tp / (tp + fn), 3) if tp + fn else None,
-        }
-    return out
+CHECK_NAMES = {
+    "G-DECODE": "Image file is readable",
+    "G-SIZE": "Square and at most 1024 px",
+    "S-SPANS": "Selected copy is an exact excerpt of the input",
+    "S-PROTECTED": "Protected phrases kept whole",
+    "S-CAPACITY": "Copy fits the ad (max 4 blocks, 120 characters, 20 words)",
+    "S-EXACT": "Exact mode: the whole input is the copy",
+    "S-FULL": "Exact mode: nothing to select",
+    "SEL-MEANING": "Meaning preserved (no lost 'not', 'up to' or conditions)",
+    "SEL-OMISSION": "Nothing essential left out of the copy",
+    "SEL-RELEVANCE": "Selected copy is relevant to the product or offer",
+    "R-BLOCKS": "Every copy line appears once, spelled exactly",
+    "R-EXTRA": "No duplicated or unplanned text",
+    "R-LEGIBLE": "Text is legible (confidence and size proxy)",
+    "P1": "Exactly one product visible",
+    "P2": "Same type of product",
+    "P3": "Same shape and silhouette",
+    "P4": "Same colours and materials",
+    "P5": "Distinctive parts preserved",
+    "P6": "Product branding matches the reference",
+    "P-SIM": "Visual similarity to the reference (diagnostic)",
+    "C-SEASON": "Scene fits the season",
+    "C-CONTRA": "No out-of-season elements",
+    "C-SETTING": "Setting plausible for the country",
+    "C-REGION": "Country recognisable from the scene (diagnostic)",
+    "GR-STEREO": "No cultural caricature or costume shorthand",
+    "GR-TOKEN": "No flags; landmarks only in the background",
+    "GR-RELIGION": "No religious imagery",
+    "GR-SEASON": "No season contradictions",
+    "GR-PEOPLE": "No real people; no minors with age-restricted products",
+    "GR-ALCOHOL": "Responsible depiction of alcohol",
+}
+DIM_NAMES = {
+    "gates": "Technical checks",
+    "text_selection": "Text selection (input → copy)",
+    "text_rendering": "Text rendering (copy → image)",
+    "product": "Product (same object)",
+    "context": "Context (country, season, guardrails)",
+}
+MARK = {
+    "pass": "PASS",
+    "fail": "FAIL",
+    "unknown": "UNSURE",
+    "not_evaluated": "NOT EVALUATED",
+    None: "-",
+}
 
 
 def _count(rows, key):
+    """Readable tally, e.g. 'PASS 3 · FAIL 1'; missing values show as 'not recorded'."""
     counts = {}
     for r in rows:
-        counts[r[key]] = counts.get(r[key], 0) + 1
-    return counts
+        label = MARK.get(r[key], r[key]) if key.endswith(("_verdict", "recognisable")) else r[key]
+        label = "not recorded" if r[key] is None else label
+        counts[label] = counts.get(label, 0) + 1
+    return " · ".join(f"{k} {v}" for k, v in sorted(counts.items(), key=lambda kv: -kv[1])) or "-"
 
 
 def _median(values):
@@ -273,90 +273,151 @@ def _median(values):
     return round(statistics.median(values), 2) if values else None
 
 
-def build(state, out, run_ids=None, labels_path=None, include_synthetic=False):
+def _table(header, rows):
+    lines = ["| " + " | ".join(header) + " |", "|" + "---|" * len(header)]
+    return "\n".join(
+        lines + ["| " + " | ".join(str(c).replace("|", "/") for c in row) + " |" for row in rows]
+    )
+
+
+def _reasons(record, verdicts=("fail",)):
+    """Plain-language reasons for required checks with the given verdicts."""
+    out = []
+    for dim in ("gates", *DIMENSIONS):
+        for c in record[dim]["checks"] if record else []:
+            if c["required"] and c["verdict"] in verdicts:
+                out.append(f"{CHECK_NAMES.get(c['id'], c['id'])}: {c['reason']}")
+    return out
+
+
+def evidence_card(r):
+    """One readable Markdown card per candidate, next to the full JSON evidence."""
+    rec = r["_record"]
+    head = f"# {r['request_id']} · candidate {r['candidate_index']}\n\n"
+    if not rec:
+        return head + f"**Not evaluated** (status `{r['status']}`, error `{r['error_code']}`).\n"
+    parts = [
+        head,
+        f"![candidate](../{r['image']})\n\n" if r["image"] else "",
+        f"**Verdict: {MARK[rec['overall_verdict']]}** · score {rec['overall_score']} · "
+        f"{'**winner**' + (' (approved)' if r['approved'] else ' (not approved)') if r['winner'] else 'not selected'}\n\n",
+        f"{r['geography']} / {r['season']} · {r['text_mode']} mode · plan guardrails: {r['guardrail_status']} · "
+        f"evaluation {rec['execution_status']}{' (' + ', '.join(rec['errors']) + ')' if rec['errors'] else ''}\n",
+    ]
+    for dim in ("gates", *DIMENSIONS):
+        d = rec[dim]
+        rows = [
+            [
+                CHECK_NAMES.get(c["id"], c["id"]),
+                MARK[c["verdict"]] + ("" if c["required"] else " (info)"),
+                c["reason"],
+            ]
+            for c in d["checks"]
+        ]
+        parts.append(
+            f"\n## {DIM_NAMES[dim]}: {MARK[d['verdict']]} (score {d['score']})\n\n"
+            + _table(["Check", "Result", "Why"], rows)
+            + "\n"
+        )
+    blocks = next(
+        (
+            c["evidence"]["blocks"]
+            for c in rec["text_rendering"]["checks"]
+            if c["id"] == "R-BLOCKS" and "blocks" in c["evidence"]
+        ),
+        [],
+    )
+    if blocks:
+        parts.append(
+            "\n## Copy: expected vs read by OCR\n\n"
+            + _table(
+                ["Expected", "Read in image", "Result", "Character error rate"],
+                [
+                    [
+                        f"`{b['expected']}`",
+                        f"`{b['observed']}`" if b["observed"] else "(not found)",
+                        b["reason"],
+                        b["cer"],
+                    ]
+                    for b in blocks
+                ],
+            )
+            + "\n"
+        )
+    return "".join(parts)
+
+
+def build(state, out, run_ids=None, include_synthetic=False):
     out = Path(out)
     rows, requests = collect(state, run_ids, include_synthetic)
     for r in rows:
         stem = f"{r['request_id']}__{r['candidate_id']}"
         r["image"] = f"images/{stem}.png" if r["image_artifact"] else None
         r["evidence"] = f"evidence/{stem}.json"
+        r["evidence_card"] = f"evidence/{stem}.md"
+        r["why_failed"] = _reasons(r["_record"])
+        r["unsure_about"] = _reasons(r["_record"], ("unknown",))
         if r["image_artifact"]:
             atomic_write(out / r["image"], state.read(r["image_artifact"]))
         _json(
             out / r["evidence"],
             {k: v for k, v in r.items() if k != "_record"} | {"evaluation_record": r["_record"]},
         )
-    public = [{k: v for k, v in r.items() if k not in {"_record", "image_artifact"}} for r in rows]
-    _json(out / "results.json", public)
-    buffer = io.StringIO()
-    fields = (
-        [k for k in public[0] if k not in {"failed_checks", "unknown_checks", "evaluation_errors"}]
-        + ["failed_checks", "unknown_checks"]
-        if public
-        else []
-    )
-    writer = csv.DictWriter(buffer, fieldnames=fields, extrasaction="ignore")
-    writer.writeheader()
-    for r in public:
-        writer.writerow(
-            {
-                **r,
-                "failed_checks": " | ".join(r["failed_checks"]),
-                "unknown_checks": " | ".join(r["unknown_checks"]),
-            }
-        )
-    atomic_write(out / "results.csv", buffer.getvalue().encode())
-    atomic_write(out / "requests.jsonl", b"".join(canonical(q) + b"\n" for q in requests))
+        atomic_write(out / r["evidence_card"], evidence_card(r).encode())
     for q in requests:
         q["reference_files"] = []
         for sha in q.pop("reference_renditions"):
             atomic_write(out / "references" / f"{sha[:12]}.png", state.read(sha))
             q["reference_files"].append(f"references/{sha[:12]}.png")
-    refs_by_run = {q["run_id"]: q["reference_files"] for q in requests}
-    atomic_write(out / "labeling-sheet.html", labeling_sheet(public, refs_by_run).encode())
-    template = io.StringIO()
-    template_writer = csv.writer(template)
-    template_writer.writerow(["run_id", "candidate_index", "dimension", "label", "labeler", "note"])
-    for r in public:
-        if r["image"]:
-            for dim in LABEL_DIMENSIONS:
-                template_writer.writerow([r["run_id"][:8], r["candidate_index"], dim, "", "", ""])
-    atomic_write(out / "labels-template.csv", template.getvalue().encode())
-    labels = read_labels(labels_path, rows)
-    stats = agreement(labels)
-    atomic_write(out / "contact-sheet.html", contact_sheet(public).encode())
-    atomic_write(out / "report.md", report(public, requests, stats, len(labels)).encode())
-    return {
-        "requests": len(requests),
-        "candidates": len(rows),
-        "labels": len(labels),
-        "out": str(out),
+    public = [{k: v for k, v in r.items() if k not in {"_record", "image_artifact"}} for r in rows]
+    _json(out / "results.json", public)
+    columns = {
+        "request": "request_id",
+        "candidate": "candidate_index",
+        "product": "product",
+        "country": "geography",
+        "season": "season",
+        "text mode": "text_mode",
+        "verdict": "overall_verdict",
+        "score": "overall_score",
+        "winner": "winner",
+        "approved": "approved",
+        "text selection": "text_selection_verdict",
+        "text rendering": "text_rendering_verdict",
+        "product match": "product_verdict",
+        "context": "context_verdict",
+        "country recognisable": "region_recognisable",
+        "plan guardrails": "guardrail_status",
+        "why it failed": "why_failed",
+        "unsure about": "unsure_about",
+        "generation s": "generation_latency_s",
+        "evaluation s": "evaluation_latency_s",
+        "generation USD": "generation_cost_usd",
+        "evaluation USD": "evaluation_cost_usd",
+        "image": "image",
+        "evidence": "evidence_card",
+        "run id": "run_id",
     }
-
-
-def labeling_sheet(rows, refs_by_run):
-    """Blind sheet for human labelling: inputs and images only, no automated verdicts or scores."""
-    cards = []
-    for r in rows:
-        if not r["image"]:
-            continue
-        refs = "".join(f"<img class='ref' src='{p}'>" for p in refs_by_run.get(r["run_id"], []))
-        copy = "".join(f"<li><code>{html.escape(t)}</code></li>" for t in r["selected_copy"] or [])
-        cards.append(
-            f"<div class='card'><img src='{r['image']}'><h3>{r['run_id'][:8]} · candidate {r['candidate_index']}</h3>"
-            f"<p><b>{r['geography']} / {r['season']}</b> · text mode {r['text_mode']}</p>"
-            f"<p>Source text:</p><pre>{html.escape(r['source_text'])}</pre><p>Copy that must appear exactly:</p><ul>{copy}</ul>"
-            f"<p>Reference product:</p>{refs}</div>"
-        )
-    return (
-        "<!doctype html><meta charset='utf-8'><title>Labeling sheet</title><style>body{font-family:system-ui;margin:16px}"
-        ".grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}.card{border:1px solid #ccc;border-radius:8px;padding:12px}"
-        ".card>img{width:100%}.ref{height:90px;margin-right:6px}pre{white-space:pre-wrap;background:#f4f4f4;padding:6px}</style>"
-        "<h1>Blind labeling sheet</h1><p>Label each candidate in labels.csv per dimension (overall, text_selection, "
-        "text_rendering, product, context, region). Evaluator results are deliberately not shown.</p><div class='grid'>"
-        + "".join(cards)
-        + "</div>"
-    )
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(columns)
+    for r in public:
+        values = []
+        for key in columns.values():
+            v = r.get(key)
+            if key.endswith("_verdict") or key == "region_recognisable":
+                v = MARK.get(v, v)
+            elif isinstance(v, list):
+                v = " | ".join(v)
+            elif isinstance(v, bool):
+                v = "yes" if v else "no"
+            values.append(v)
+        writer.writerow(values)
+    atomic_write(out / "results.csv", buffer.getvalue().encode())
+    atomic_write(out / "requests.jsonl", b"".join(canonical(q) + b"\n" for q in requests))
+    atomic_write(out / "contact-sheet.html", contact_sheet(public).encode())
+    atomic_write(out / "report.md", report(public, requests).encode())
+    return {"requests": len(requests), "candidates": len(rows), "out": str(out)}
 
 
 def contact_sheet(rows):
@@ -364,52 +425,51 @@ def contact_sheet(rows):
     cards = []
     for r in rows:
         dims = "".join(
-            f"<li>{d}: <b style='color:{color.get(r[d + '_verdict'], '#555')}'>{r[d + '_verdict']}</b> ({r[d + '_score']})</li>"
+            f"<li>{DIM_NAMES[d]}: <b style='color:{color.get(r[d + '_verdict'], '#555')}'>{MARK[r[d + '_verdict']]}</b></li>"
             for d in DIMENSIONS
         )
-        fails = "".join(f"<li>{html.escape(f)}</li>" for f in r["failed_checks"]) or "<li>none</li>"
+        why = (
+            "".join(f"<li>{html.escape(f)}</li>" for f in r["why_failed"])
+            or "<li>nothing failed</li>"
+        )
         img = (
             f"<img src='{r['image']}' alt='{r['candidate_id']}'>"
             if r["image"]
             else f"<div class='missing'>no image: {html.escape(str(r['error_code']))}</div>"
         )
         badge = (
-            "WINNER" + (" · APPROVED" if r["approved"] else " · not approved")
+            ("WINNER · APPROVED" if r["approved"] else "WINNER · not approved")
             if r["winner"]
             else ""
         )
         cards.append(
-            f"<div class='card'>{img}<h3>{html.escape(r['request_id'])} · c{r['candidate_index']} <span class='badge'>{badge}</span></h3>"
-            f"<p><b style='color:{color.get(r['overall_verdict'], '#555')}'>{r['overall_verdict'].upper()}</b> · score {r['overall_score']} · "
-            f"{r['geography']}/{r['season']} · {r['text_mode']} · guardrail {r['guardrail_status']}</p><ul>{dims}</ul>"
-            f"<p>Failed checks:</p><ul>{fails}</ul><p><a href='{r['evidence']}'>evidence</a></p></div>"
+            f"<div class='card'>{img}<h3>{html.escape(r['request_id'])} · candidate {r['candidate_index']} <span class='badge'>{badge}</span></h3>"
+            f"<p><b style='color:{color.get(r['overall_verdict'], '#555')}'>{MARK[r['overall_verdict']]}</b> · score {r['overall_score']} · "
+            f"{html.escape(str(r['product']))} · {r['geography']}/{r['season']} · {r['text_mode']}</p><ul>{dims}</ul>"
+            f"<p>Why it failed:</p><ul>{why}</ul><p><a href='{r['evidence_card']}'>full evaluation</a></p></div>"
         )
     return (
         "<!doctype html><meta charset='utf-8'><title>Contact sheet</title><style>body{font-family:system-ui;margin:16px;background:#fafafa}"
         ".grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}.card{background:#fff;border:1px solid #ddd;border-radius:8px;padding:12px}"
         ".card img{width:100%;border-radius:4px}.badge{font-size:12px;color:#1b5e9e}.missing{height:200px;display:flex;align-items:center;justify-content:center;background:#eee}"
-        "li{font-size:13px}</style><h1>Generated candidates and evaluation results</h1><div class='grid'>"
+        "li{font-size:13px}</style><h1>Generated ads and their evaluations</h1><div class='grid'>"
         + "".join(cards)
         + "</div>"
     )
 
 
-def _table(header, rows):
-    return "\n".join(
-        ["| " + " | ".join(header) + " |", "|" + "---|" * len(header)]
-        + ["| " + " | ".join(str(c) for c in row) + " |" for row in rows]
-    )
-
-
-def report(rows, requests, stats, n_labels):
+def report(rows, requests):
     evaluated = [r for r in rows if r["overall_verdict"] != "not_evaluated"]
     dim_rows = [
-        [d, *(sum(r[f"{d}_verdict"] == v for r in evaluated) for v in ("pass", "fail", "unknown"))]
+        [
+            DIM_NAMES[d],
+            *(sum(r[f"{d}_verdict"] == v for r in evaluated) for v in ("pass", "fail", "unknown")),
+        ]
         for d in DIMENSIONS
     ]
     dim_rows.append(
         [
-            "**overall**",
+            "**Overall**",
             *(
                 sum(r["overall_verdict"] == v for r in evaluated)
                 for v in ("pass", "fail", "unknown")
@@ -417,120 +477,98 @@ def report(rows, requests, stats, n_labels):
         ]
     )
     approved = sum(q["approved"] for q in requests)
-    winners = [
-        [
-            r["request_id"],
-            r["candidate_id"],
-            r["overall_verdict"],
-            r["overall_score"],
-            "yes" if r["approved"] else "no",
-            f"![]({r['image']})",
-        ]
-        for r in rows
-        if r["winner"]
-    ]
-    successes = [r for r in evaluated if r["overall_verdict"] == "pass"][:3]
-    failures = sorted(
-        [r for r in evaluated if r["overall_verdict"] == "fail"],
-        key=lambda r: -r["failed_required_checks"],
-    )[:4]
-    examples = (
-        "\n\n".join(
-            f"**{r['request_id']} · {r['candidate_id']} — {r['overall_verdict']}**\n\n![]({r['image']})\n\n"
-            + (
-                "Failed checks:\n" + "\n".join(f"- {f}" for f in r["failed_checks"])
-                if r["failed_checks"]
-                else "All required checks passed."
-            )
-            for r in successes + failures
+    failures = {}
+    for r in evaluated:
+        for reason in r["why_failed"]:
+            name = reason.split(":")[0]
+            failures[name] = failures.get(name, 0) + 1
+    by_request = {}
+    for r in rows:
+        by_request.setdefault(r["run_id"], []).append(r)
+    sections = []
+    for q in requests:
+        cands = sorted(
+            by_request.get(q["run_id"], []), key=lambda r: (not r["winner"], r["candidate_index"])
         )
-        or "_No evaluated candidates yet._"
-    )
-    label_rows = [
-        [
-            d,
-            s["labelled"],
-            s["abstained"],
-            s["tp"],
-            s["fp_false_reject"],
-            s["fn_false_accept"],
-            s["tn"],
-            s["agreement"],
-            s["cohens_kappa"],
-        ]
-        for d, s in stats.items()
-    ]
-    unknown_or_failed_exec = [
-        r for r in rows if r["status"] != "evaluated" or r["execution_status"] != "ok"
-    ]
-    return f"""# Context-enriched ad generation with an automated evaluator
+        ranking = {c["candidate_index"]: i + 1 for i, c in enumerate(q.get("ranking") or [])}
+        req = q["request"]
+        winner = next((r for r in cands if r["winner"]), None)
+        table = _table(
+            ["Rank", "Candidate", "Verdict", "Score", "Why"],
+            [
+                [
+                    ranking.get(r["candidate_index"], "-"),
+                    r["candidate_index"],
+                    MARK[r["overall_verdict"]],
+                    r["overall_score"],
+                    "; ".join(r["why_failed"])
+                    or (
+                        "unsure: " + "; ".join(r["unsure_about"])
+                        if r["unsure_about"]
+                        else "all required checks passed"
+                    ),
+                ]
+                for r in sorted(cands, key=lambda r: ranking.get(r["candidate_index"], 99))
+            ],
+        )
+        sections.append(
+            f"### {req['request_id']}\n\n"
+            f"{cands[0]['product'] if cands else ''} · **{req['geography']} / {req['season']}** · {req['text']['mode']} mode · "
+            f"copy: {' / '.join(f'`{t}`' for t in (q['selected_copy'] or []))}\n\n{table}\n\n"
+            + (
+                f"Winner (candidate {winner['candidate_index']}, {'approved' if winner['approved'] else 'not approved'}):\n\n![]({winner['image']})\n"
+                if winner and winner["image"]
+                else "No winner.\n"
+            )
+        )
+    return f"""# Evaluation report: generated display ads
 
-_Generated by `adgen report` from the local state store. Every number below is computed from `results.json`; nothing is hand-edited._
+_Generated by `adgen report` from the pipeline's state store. Every number is computed from `results.json`; nothing is hand-edited. Per-candidate details: `evidence/*.md`. Visual overview: `contact-sheet.html`._
 
 ## 1. Summary
 
-- Requests: **{len(requests)}** · candidates: **{len(rows)}** · evaluated: **{len(evaluated)}**
-- Requests with an **approved** winner (winner passes every required check): **{approved}/{len(requests)}**
-- Human-labelled judgments: **{n_labels}** (see §6)
-- Country recognisable from the scene (diagnostic C-REGION, not a pass criterion): {_count(evaluated, "region_recognisable")}
-- Median generation latency per candidate: {_median([r["generation_latency_s"] for r in rows])} s · median evaluation latency: {_median([r["evaluation_latency_s"] for r in rows])} s
-- Estimated cost (report-only, from returned token usage): generation {round(sum(r["generation_cost_usd"] for r in rows), 3)} USD · evaluation judge {round(sum(r["evaluation_cost_usd"] for r in rows), 3)} USD · shared per-request {round(sum(q["shared_cost_usd"] for q in requests), 3)} USD
+| | |
+|---|---|
+| Requests / candidates / evaluated | {len(requests)} / {len(rows)} / {len(evaluated)} |
+| Requests whose winner is **approved** (passes every required check) | {approved} / {len(requests)} |
+| Candidates passing every required check | {sum(r["overall_verdict"] == "pass" for r in evaluated)} / {len(evaluated)} |
+| Country recognisable from the scene (diagnostic) | {_count(evaluated, "region_recognisable")} |
+| Plan guardrail outcomes | {_count(rows, "guardrail_status")} |
+| Evaluation completeness | {_count(evaluated, "execution_status")} |
+| Median seconds per candidate: generation / evaluation | {_median([r["generation_latency_s"] for r in rows])} / {_median([r["evaluation_latency_s"] for r in rows])} |
+| Estimated cost USD: generation / evaluation judge / shared per request | {round(sum(r["generation_cost_usd"] for r in rows), 3)} / {round(sum(r["evaluation_cost_usd"] for r in rows), 3)} / {round(sum(q["shared_cost_usd"] for q in requests), 3)} |
 
-## 2. Architecture
+## 2. How each ad is judged
 
-Typed request (product photo(s), geography enum, season enum, freeform text with Exact/Extract policy) → reference normalization → frozen text plan (Exact in code; Extract = source spans chosen by an LLM, validated in code) → product analysis (OpenAI vision) → country/season resolution (code) → per candidate: creative plan (OpenAI; sees text roles and lengths, never the copy) → plan guardrails (keyword check + reviewer; one replan, then generate and flag) → prompt compiled in code → one Gemini 3.1 Flash Image call → output gate (square, ≤1024 px) → **evaluation** → ranking in code → best image exported. Every stage, artifact and model call is recorded in a SQLite state store, so runs resume and replay offline. Design: `docs/design/`.
+Each candidate gets PASS, FAIL or UNSURE per dimension. A candidate **passes** only if every required check passes. A single failed check fails it, and an unresolved check makes it UNSURE. Missing evidence never counts as a pass. The code makes these decisions; the AI models only supply measurements (OCR text, detections, similarity) or yes/no answers to single, specific questions.
 
-## 3. Evaluation method
-
-Verdicts are composed **in code**: any trusted required failure → fail; otherwise any unresolved check → unknown; otherwise pass. Models only supply measurements or atomic yes/no/unknown answers. Missing evidence is never a pass.
-
-| Dimension | Required checks | Evidence |
+| Dimension | What is checked | How |
 |---|---|---|
-| Text selection (source → copy) | S-SPANS, S-PROTECTED, S-CAPACITY, S-EXACT/S-FULL; Extract: SEL-MEANING, SEL-OMISSION, SEL-RELEVANCE | Code re-verification; judge failures must quote the source |
-| Text rendering (copy → pixels) | R-BLOCKS (each block rendered exactly, one-to-one), R-EXTRA (no duplicated/unplanned copy), R-LEGIBLE (proxy; never fails alone) | Blind PaddleOCR PP-OCRv6; lines grouped spatially; product-label text excluded via detector box; CER/WER |
-| Product (same object) | P1 exactly one (detector and judge must agree), P2 type, P3 shape, P4 colours/materials, P5 distinctive components, P6 branding (if legible in reference) | OpenAI judge sees references + ad; Grounding DINO for crop/count only; DINOv2 similarity is a non-required diagnostic. Position/orientation not scored |
-| Context | C-SEASON, C-CONTRA, C-SETTING, image guardrails GR-* (C-REGION recognisability is reported, not required) | Same judge call; criteria from resolved context and static policy, never from the planner's own cues |
+| {DIM_NAMES["text_selection"]} | Copy is an exact excerpt; protected phrases intact; fits the ad; in Extract mode, meaning kept and nothing essential dropped | Code re-verification; AI judge (its FAIL counts only if it quotes the input) |
+| {DIM_NAMES["text_rendering"]} | Each copy line appears once, spelled exactly; no duplicated or extra text; legible | OCR reads the image **without** being told the expected text; text on the product itself is ignored |
+| {DIM_NAMES["product"]} | Exactly one product; same type, shape, colours, distinctive parts, branding | AI judge compares references with the ad; object detector used to crop and count; position and angle are not judged |
+| {DIM_NAMES["context"]} | Season fits; nothing out of season; plausible for the country; no flags, caricature, religious imagery or irresponsible alcohol depiction | Same judge call; criteria come from the country/season inputs and the fixed policy, never from the generator's own plan |
 
-Scores rank candidates only: per dimension, mean over required checks (pass 1, unknown 0.5, fail 0); text rendering = mean max(0, 1 − CER); overall = unweighted mean. Ranking rule: verdict tier → failed required checks → score → guardrail status → index. A higher score never overrides a failed check.
+Scores (0–1) only break ties between candidates: a higher score never beats a failed check. Ranking: verdict → fewer failed checks → score → plan guardrail outcome → candidate number.
 
-## 4. Success criteria (set before these results)
+## 3. Results
 
-Evaluator: (E1) no human-labelled failure is accepted (false accepts = 0); (E2) false rejects ≤ 20% of human-labelled passes; (E3) abstentions reported per dimension, not hidden. Pipeline: (G1) every published image is square and ≤1024 px (test-enforced); (G2) report approval yield and cost/latency honestly. Thresholds are provisional pilot values in `config/evaluator.toml`.
+{_table(["Dimension", "PASS", "FAIL", "UNSURE"], dim_rows)}
 
-## 5. Results
+Most common failure reasons:
 
-{_table(["dimension", "pass", "fail", "unknown"], dim_rows)}
+{_table(["Check", "Candidates failing"], sorted(failures.items(), key=lambda x: -x[1])) if failures else "_none_"}
 
-Execution status: {_count(evaluated, "execution_status")} · candidate status: {_count(rows, "status")} · guardrail status: {_count(rows, "guardrail_status")}
+## 4. Per request
 
-### Winners per request
+{chr(10).join(sections) if sections else "_No evaluated requests._"}
 
-{_table(["request", "candidate", "verdict", "score", "approved", "image"], winners) if winners else "_none_"}
+## 5. Limitations
 
-### Representative successes and failures
-
-{examples}
-
-### Failures and unknowns (not hidden)
-
-{_table(["candidate", "status", "execution", "unknown checks", "errors"], [[r["candidate_id"], r["status"], r["execution_status"], ", ".join(r["unknown_checks"]) or "-", ", ".join(r["evaluation_errors"]) or (r["error_code"] or "-")] for r in unknown_or_failed_exec]) if unknown_or_failed_exec else "_none_"}
-
-## 6. Credibility check against human labels
-
-Positive class = defect (fail). Unknown automated verdicts are abstentions and excluded from agreement. One annotator unless stated: no inter-rater agreement is claimed.
-
-{_table(["dimension", "labelled", "abstained", "TP", "FP (false reject)", "FN (false accept)", "TN", "agreement", "kappa"], label_rows) if label_rows else "_No human labels supplied yet. Add rows to the labels CSV and rebuild._"}
-
-## 7. Limitations
-
-- Small, smoke-scale sample; counts matter more than percentages and nothing is statistically significant.
-- The judge (OpenAI) is from a different family than the generator (Gemini) but the same family as the planner/reviewer; its answers are validated only against the labelled subset above.
-- OCR cannot read stylised script logos; branding (P6) relies mainly on the judge.
-- Thresholds (detector count, OCR confidence, legibility proxy) are provisional and not yet calibrated on a separate dev split.
-- Country-level geography cues are approximations; the evaluator checks for contradictions and plausibility, not precise locale.
-- Costs are estimates from returned token usage and configured list prices; provider dashboards are authoritative.
-
-## 8. Reproducibility and agent disclosure
-
-Inputs and settings: `requests.jsonl`. Per-candidate evidence (OCR lines, detections, judge answers, check reasons): `evidence/`. Images: `images/`. Offline replay: `adgen export-fixtures` then `adgen generate --fixtures`. Agent collaboration log: `docs/agent-collaboration.md`; decisions: `docs/decisions.md`.
+- Small sample: counts matter more than percentages, and nothing here is statistically significant.
+- The evaluator's accuracy has **not** been measured against human labels. Its behaviour is tested on recorded real evidence (for example, a genuinely duplicated headline is caught) and on constructed cases, but its judgments across this batch are unverified.
+- The AI judge (OpenAI) is from a different model family than the image generator (Gemini), but the same family as the planner and reviewer.
+- OCR cannot read stylised logos, so branding relies mainly on the judge. The text-rendering score reflects spelling, not duplicates; duplicates still fail the verdict.
+- Thresholds (detector count, OCR confidence, legibility) are provisional and were not tuned on these results.
+- Costs are estimates from returned token usage and list prices; provider dashboards are authoritative.
 """

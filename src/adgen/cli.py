@@ -76,7 +76,6 @@ def parser():
     report.add_argument(
         "--runs", nargs="*", help="Run IDs or prefixes (default: all evaluated runs)"
     )
-    report.add_argument("--labels", type=Path, default=Path("data/labels.csv"))
     report.add_argument(
         "--include-synthetic", action="store_true", help="Include synthetic demo runs"
     )
@@ -133,11 +132,7 @@ def main(argv=None):
             )
             return 0
         if args.command == "report":
-            print(
-                json.dumps(
-                    build_report(state, args.out, args.runs, args.labels, args.include_synthetic)
-                )
-            )
+            print(json.dumps(build_report(state, args.out, args.runs, args.include_synthetic)))
             return 0
         if args.command == "export":
             with state.lock(args.run_id):

@@ -120,3 +120,12 @@ Detailed differences and operational limits: [generation runbook](generation-run
 | Versions bumped (generation/2, guardrails/2, evaluator/2); only new runs count | Confirmed by Garmit | Earlier runs, which remain as history |
 | Batch v1: 20 requests × 3 candidates covering all countries, seasons, products and text modes plus deliberate hard cases; pilot 2, then freeze, then run all as held-out with provisional thresholds | Agent plan per Garmit's request | — |
 | Blind labelling: sheet without verdicts; labels template for every candidate × 6 dimensions (overall, 4 dimensions, region) | Implemented for the credibility check | — |
+
+
+## 2026-09-26 — Jeep product, no human labels, readable report (Garmit, via Claude Code session)
+
+| Decision | Status and reason | Supersedes |
+|---|---|---|
+| Add Jeep references; replace requests 07, 09, 13 and 18 with Jeep requests (same countries and seasons). Never combine 2-door jeep-2 with 4-door jeep-1/jeep-3; jeep-2 (snowy) is used in a summer request as a season-leakage probe | Confirmed by Garmit (new images); variant handling is an agent decision | Heineken GB, sunglasses AE, Modelo AU, bottle US requests |
+| Drop human labelling and the label-agreement report | Confirmed by Garmit: short on time. The report states that evaluator accuracy is not measured against humans | Batch v1 steps 6–7 (blind labels, credibility check) |
+| Report output rewritten for people: plain-language check names, per-request ranking with reasons, per-candidate evidence cards (`evidence/*.md`), readable CSV | Confirmed by Garmit | Machine-oriented CSV/JSON only |

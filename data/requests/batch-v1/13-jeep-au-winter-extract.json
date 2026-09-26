@@ -1,0 +1,18 @@
+{
+  "request_id": "b1-13-jeep-au-winter-extract",
+  "product_images": [
+    "../../products/jeep-1.jpg",
+    "../../products/jeep-3.jpg"
+  ],
+  "geography": "AU",
+  "season": "winter",
+  "text": {
+    "mode": "extract",
+    "source_text": "Weekend plans? Find a trail. Four-wheel drive comes standard on every Wrangler. Book a test drive today. Service offers valid until 30 June.",
+    "protected_phrases": [
+      "Book a test drive today."
+    ]
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

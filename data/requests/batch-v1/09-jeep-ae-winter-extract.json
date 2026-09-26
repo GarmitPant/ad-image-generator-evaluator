@@ -1,0 +1,17 @@
+{
+  "request_id": "b1-09-jeep-ae-winter-extract",
+  "product_images": [
+    "../../products/jeep-3.jpg"
+  ],
+  "geography": "AE",
+  "season": "winter",
+  "text": {
+    "mode": "extract",
+    "source_text": "Take the long way round. The Wrangler Unlimited seats five with room for all your gear. Removable doors and roof. 0% financing for 36 months on selected models. Terms apply.",
+    "protected_phrases": [
+      "Terms apply."
+    ]
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

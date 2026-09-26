@@ -210,7 +210,9 @@ class Evaluator:
             check(
                 "P-SIM",
                 "pass" if similarity else "unknown",
-                "DINOv2 best-reference similarity (diagnostic, not required)",
+                f"DINOv2 cosine similarity to the closest reference: {similarity['best']}"
+                if similarity
+                else "no product crop to compare",
                 required=False,
                 similarity=similarity,
             ),

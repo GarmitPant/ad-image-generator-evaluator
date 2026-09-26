@@ -1,0 +1,15 @@
+{
+  "request_id": "b1-07-jeep-gb-winter-exact",
+  "product_images": [
+    "../../products/jeep-1.jpg",
+    "../../products/jeep-3.jpg"
+  ],
+  "geography": "GB",
+  "season": "winter",
+  "text": {
+    "mode": "exact",
+    "source_text": "Jeep Wrangler\nEvery road. Every weather."
+  },
+  "n_candidates": 3,
+  "aspect_ratio": "1:1"
+}

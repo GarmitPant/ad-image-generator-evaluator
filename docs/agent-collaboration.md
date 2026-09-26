@@ -87,3 +87,10 @@
 - Human instruction: relax guardrails on styles, culture and geography so regions are distinguishable; add the region evaluator check; record only new runs from now on; plan 20 ads with a report, then human labels and an evaluation-vs-labels report.
 - Work performed: policy guardrails/2, neutral per-country notes inviting a specific region, planner instruction for ≥2 regional cues, version bumps, diagnostic C-REGION check, blind labeling sheet and labels template in `adgen report`, 20 validated batch requests, resumable `scripts/run-batch.sh`, `docs/batch-v1-plan.md`.
 - Validation: 118 offline tests (new: relaxed-keyword and still-banned cases, C-REGION non-decisive, blind-sheet contents); all 20 requests validated offline (schema, intake, protected phrases, Exact capacity). No live calls.
+
+## 2026-09-26 — Jeep requests, labels removed, readable report (Claude Code)
+
+- Human instruction: take the three new Jeep images into account and modify the requests; remove human labelling (short on time); make the compiled evaluation output easy for humans to read; only the auto-generated evaluation report remains; the submission write-up will focus on implementation and design.
+- Agent disclosure: the Jeep images had already been committed unreviewed in 3acd277 by the agent's `git add -A`; they were then inspected (Unsplash, 12–25 MP, no sensitive content) and their provenance recorded. The agent now stages explicit paths.
+- Work performed: provenance; four Jeep requests (2-door jeep-2 kept separate from the 4-door references); removed labels CSV, labelling sheet, template and agreement code; rewrote the report output (plain-language names, per-request ranking and reasons, evidence cards, readable CSV); P-SIM reason now shows the similarity value.
+- Validation: all 20 requests valid offline; 118 tests; report rendered and inspected on the dry-evaluated live Ray-Ban run.
