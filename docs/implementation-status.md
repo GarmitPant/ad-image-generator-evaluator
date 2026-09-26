@@ -30,7 +30,7 @@ Specs: docs/design/05 §5–7 (text, product = same-object P1–P6, context, com
 |---|---|---|
 | EV1 | Vision backends + evidence recording + `config/evaluator.toml` + `[eval]` extra | **done** — LocalVision verified on real images (OCR ~6 s, detect ~2.5 s, embed <0.3 s after load). PaddleOCR 3.7 defaults to PP-OCRv6; pinned explicitly |
 | EV2 | Text evaluation (`eval/text_eval.py`, `eval/compose.py`, `eval/judge.py` selection schema) | **done** — tests on genuine recorded OCR/detection of live c1 (pass) and c2 (duplicate caught) in `tests/fixtures/rayban_live_evidence.json`. Deferred: blind judge fallback reader when OCR is uncertain (returns unknown instead) |
-| EV3 | Visual judge (product P1–P6 + context + image guardrails, one call per candidate), composition, scores, ranking rule | pending |
+| EV3 | Visual judge + candidate evaluator (`eval/judge.py`, `eval/evaluator.py`, `compose.rank`) | **done** — one judge call per candidate (refs + ad, blind to copy); P1 needs detector+judge agreement; judge outage → unknown/degraded; GR-TEXT image rule skipped (covered by rendering) |
 | EV4 | Pipeline integration: evaluation stage per candidate, selection, migration 003 (evaluation/selection tables), export best.png, CLI `generate` (evaluates by default; `--skip-evaluation`), `evaluate RUN_ID…`, demo with synthetic vision, vision fixtures in export/replay | pending |
 | EV5 | `adgen report`: submission bundle and human-label agreement (labels CSV) | pending |
 | EV6 | Docs/runbook; live evaluation of the curated Ray-Ban run (paid judge call, needs Garmit's go) | pending |
