@@ -3,7 +3,7 @@
 Generates display-ad images from a product photo, a target country, a season and free-form ad text. It then **automatically evaluates every generated image** and picks the best one. Built in Python for the G2 AI hackathon (problem 2: enrichment of image generation using structured context).
 
 - **Generation:** Google Gemini 3.1 Flash Image renders the ads. OpenAI models analyse the product, choose the ad copy and plan each scene.
-- **Evaluation:** every image is checked for text accuracy, product fidelity and context. Local vision models (OCR, object detection, image embeddings) do the measuring, and an OpenAI vision judge answers narrow yes/no questions. Pass or fail is always decided in code.
+- **Evaluation:** every image is checked for text accuracy, product fidelity and context. Local vision models (OCR, object detection, image embeddings) do the measuring, and an **LLM-as-judge** (a multimodal OpenAI model that sees the reference photos and the ad) answers narrow yes/no questions. Pass or fail is always decided in code, never by the LLM.
 - **Output:** a ranked set of candidates per request, the winning `best.png`, and a human-readable evaluation report with evidence for every image.
 
 ## How it works
@@ -20,7 +20,7 @@ request (product photo(s) + country + season + ad text)
        ├─ check the plan against guardrails    keyword rules + OpenAI reviewer; one retry, then flag
        ├─ build the image prompt               code
        ├─ generate one image                   Gemini 3.1 Flash Image, 1:1, 1024 px
-       └─ evaluate the image                   OCR + detector + embeddings (local) + OpenAI judge → verdicts
+       └─ evaluate the image                   OCR + detector + embeddings (local) + LLM judge → verdicts
   │
   └─ rank candidates in code → best.png + evaluation records
 ```
@@ -31,10 +31,10 @@ Each image gets **PASS**, **FAIL** or **UNSURE** in four dimensions. It passes o
 
 | Dimension | Checks |
 |---|---|
-| Text selection (input → copy) | Copy is an exact excerpt of the input; protected phrases kept whole; fits the ad; in Extract mode, meaning is preserved (no lost "not" or "up to") and nothing essential is dropped |
+| Text selection (input → copy) | Copy is an exact excerpt of the input; protected phrases kept whole; fits the ad; in Extract mode, the LLM judge checks that meaning is preserved (no lost "not" or "up to") and nothing essential is dropped. A failure counts only if it quotes the input |
 | Text rendering (copy → image) | OCR reads the image **without being told the expected text**. Every copy line must appear exactly once, spelled exactly, with no duplicated or extra ad text. Text printed on the product itself is ignored |
-| Product | Exactly one product (detector and judge must agree); same type, shape, colours and materials, distinctive parts and branding as the reference. Position and viewing angle are not judged |
-| Context | Scene fits the season and is plausible for the country; no out-of-season elements; no flags, caricature, religious imagery or irresponsible alcohol depiction |
+| Product | Exactly one product (detector and LLM judge must agree); the LLM judge compares type, shape, colours and materials, distinctive parts and branding with the reference photos. Position and viewing angle are not judged |
+| Context | LLM judge: scene fits the season and is plausible for the country; no out-of-season elements; no flags, caricature, religious imagery or irresponsible alcohol depiction |
 
 Candidates are ranked by: verdict → number of failed checks → score → whether the country is recognisable → visual similarity of the product to the reference → candidate number. Scores only break ties; a high score never outranks a failed check.
 
@@ -181,7 +181,7 @@ The tests use recorded real evidence (OCR and detections from generated ads) plu
 ## Limitations
 
 - The evaluator's judgments have not been validated against human labels. Its behaviour is tested on recorded real cases and constructed ones.
-- OCR cannot read stylised logos, so product branding relies mainly on the AI judge.
+- OCR cannot read stylised logos, so product branding relies mainly on the LLM judge.
 - Country-level context is an approximation. The evaluator checks for contradictions and plausibility, not a precise location.
 - Only square 1024 px images are produced.
 
