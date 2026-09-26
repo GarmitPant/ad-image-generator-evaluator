@@ -168,11 +168,24 @@ If TextPlan is missing for an externally supplied image, Exact mode can derive f
 
 ### Product fidelity
 
-Use the original references (1–3), not merely a generated ProductProfile. Compare the output crop with **each** reference and keep per-reference evidence. Identity similarity uses the best-matching reference, because different references show different views. Attribute checks may use any reference where the attribute is visible. Grounding DINO localizes candidate products; DINOv2 crop similarity is one identity signal. Report detector confidence, boxes, duplicate hypotheses, crop preprocessing and embedding values. A no-detection event is not conclusive proof of no product; use human calibration and optional independent visual evidence.
+**Question: is the product in the ad the *same object* as the reference?** Placement, orientation, scale and viewpoint are **not** evaluated. Garmit confirmed on 2026-09-26 that generated products already follow the reference pose, and that position and orientation checks are redundant. Plan zone adherence is likewise not a product criterion.
 
-Require an explicit attribute rubric: silhouette/proportions, key color/material, distinctive components, visible branding/label, count and main-subject visibility. Distinguish admissible viewpoint/lighting differences from altered identity. If labels are unreadable in the reference, do not invent a required transcription. If a mandatory identifying feature is unobservable in the output, return unknown/fail according to its predeclared visibility rule.
+Required checks. Each is `pass | fail | unknown`, and the dimension is composed in code:
 
-Same-category wrong-brand products are essential negatives. Global similarity alone is insufficient. Masked color difference is optional and must not fail legitimate lighting changes without calibration. No universal DINO or color threshold is asserted in this document.
+| ID | Check | Evidence |
+|---|---|---|
+| P1 | Exactly one instance of the product is present (missing or duplicated fails) | Detector count cross-checked with the judge; disagreement gives unknown |
+| P2 | Same product type or category | Judge sees the references and the generated image together |
+| P3 | Same shape and silhouette, allowing a change of viewpoint | Judge (pairwise with references) |
+| P4 | Same colours and materials, allowing lighting changes | Judge (pairwise with references) |
+| P5 | Distinctive components preserved (for example lens logo, hinge accents, cap, label layout) | Judge, using the cached ProductProfile component list as the checklist |
+| P6 | Branding/label matches, only when legible in the reference | OCR on the product crop vs ProductProfile `visible_label_text`, plus the judge. Skipped (not required) when the reference has no legible branding |
+
+**Measured identity signal:** DINOv2 cosine similarity between the generated product crop and each reference crop, keeping the best match. It is reported as a diagnostic, and it becomes a required check (P7) only if dev-set calibration shows it separates same-object from wrong-object pairs. No threshold is assumed.
+
+**Role of the detector:** Grounding DINO is only a **means**. It finds and crops the product (prompted with the ProductProfile category) so that DINOv2 and label OCR compare the product rather than the background, and it counts instances for P1. Box position, size and orientation are recorded as evidence but never scored. A no-detection result makes P1 and the crop-based signals `unknown` unless the judge independently finds no product.
+
+Same-category wrong-brand products (for example Modelo vs Heineken) and same-colour confusers (the green water bottle vs Heineken) are essential negatives. Global similarity alone is insufficient. If a mandatory identifying feature is not visible in the output, P5/P6 return `unknown`. They do not pass by default.
 
 ### Context adherence
 
@@ -187,8 +200,8 @@ The judge answers each predicate with `yes|no|unknown`, region description and s
 | Evidence | Model | Where |
 |---|---|---|
 | Blind text detection and recognition with boxes | PaddleOCR PP-OCRv5 | Local |
-| Product localization (boxes, duplicate count) | `IDEA-Research/grounding-dino-tiny` | Local |
-| Crop identity similarity vs each reference | `facebook/dinov2-small` | Local |
+| Product crop and instance count (not position/orientation scoring) | `IDEA-Research/grounding-dino-tiny` @ `a2bb814d` | Local |
+| Crop identity similarity vs each reference | `facebook/dinov2-small` @ `ed25f3a3` | Local |
 | Atomic yes/no/unknown questions (product attributes, context, image guardrails, source→copy semantics, blind fallback transcription) | OpenAI `gpt-6-sol` with vision | API |
 
 - **Machine:** the development machine is an Apple M1 with 8 GB of RAM. Load local models lazily, one at a time, on CPU or Apple's GPU (MPS).

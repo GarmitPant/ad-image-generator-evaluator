@@ -65,6 +65,7 @@ These requirements come from Garmit's latest messages. Model IDs, extraction imp
 | D29 | Save all candidate images; export winner + summary to `outputs/` | Confirmed by Garmit |
 | D30 | Evaluator vision models local only (PaddleOCR, Grounding DINO tiny, DINOv2 small) behind swappable interfaces; hosted later if needed | Confirmed by Garmit |
 | D31 | Batched evaluation after the single-request generate→evaluate→select flow works | Confirmed by Garmit |
+| D32 | Product fidelity = same-object identity only (P1–P6, DINOv2 diagnostic); no position/orientation/scale/zone scoring; detector used only to crop and count | Confirmed by Garmit |
 
 Prior rationale is preserved in Git history. The root decision register records human direction; do not infer collective architecture approval from repository setup.
 

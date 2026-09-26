@@ -86,3 +86,13 @@ Detailed differences and operational limits: [generation runbook](generation-run
 | Remove the local per-run budget cap (`--budget-usd`, pre-dispatch reservations, `budget_cap_usd`/`reservation_usd` columns) | Confirmed by Garmit: users set usage limits on the provider API accounts; the local cap was an estimate, not an enforceable limit | Keep local cap (rejected) |
 | Keep `--allow-paid`, dispatch-recorded-before-send, never resending unknown-outcome calls, and per-call usage with report-only cost estimates | Agent recommendation accepted; prevents accidental live runs and duplicate charges, and supplies cost-per-ad for the report | Remove all cost recording (not chosen) |
 | Implement as additive migration 002 (drop columns) rather than editing migration 001 | Implementation choice; existing local databases upgrade in place | Rewrite 001 (would break existing DBs) |
+
+
+## 2026-09-26 — Product fidelity scope (Garmit, via Claude Code session)
+
+| Decision | Status and reason | Supersedes / alternative considered |
+|---|---|---|
+| Product fidelity checks only whether the ad shows the *same object*: presence/count, type, shape, colours/materials, distinctive components, legible branding | Confirmed by Garmit: generated products already follow reference pose; position/orientation checks are redundant | Attribute rubric that included main-subject visibility/placement |
+| Keep Grounding DINO only to crop and count (no scoring of box position/orientation/scale) | Agent decision under that direction: a crop makes DINOv2 and label OCR compare the product, not the scene background; count supports the missing/duplicate check | Drop detector and embed whole images (rejected: background dominates similarity) |
+| DINOv2 similarity is a diagnostic until dev calibration shows it separates same vs wrong objects | Proposed; no threshold assumed | Fixed similarity threshold |
+| Pinned weights: grounding-dino-tiny `a2bb814d`, dinov2-small `ed25f3a3` (Apache-2.0) | Proposed pins from Hugging Face on 2026-09-26 | — |
