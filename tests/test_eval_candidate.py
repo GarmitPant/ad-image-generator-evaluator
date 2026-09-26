@@ -151,3 +151,37 @@ def test_detector_prompt_and_duplicate_boxes():
         {"box": [596, 204, 767, 852], "score": 0.45},
     ]
     assert len(_counted(boxes, cfg)) == 1  # one bottle, two near-identical boxes
+
+
+def test_ties_broken_by_country_recognisability_then_product_similarity():
+    base = {"overall_verdict": "pass", "failed_required_checks": 0, "overall_score": 1.0}
+    ranked = rank(
+        [
+            {
+                "candidate_index": 1,
+                "guardrail_status": "approved",
+                "evaluation": {**base, "region": "fail", "similarity": 0.99},
+            },
+            {
+                "candidate_index": 2,
+                "guardrail_status": "approved",
+                "evaluation": {**base, "region": "pass", "similarity": 0.80},
+            },
+            {
+                "candidate_index": 3,
+                "guardrail_status": "approved",
+                "evaluation": {**base, "region": "pass", "similarity": 0.90},
+            },
+            {
+                "candidate_index": 4,
+                "guardrail_status": "approved",
+                "evaluation": {**base, "overall_score": 0.9, "region": "pass", "similarity": 1.0},
+            },
+        ]
+    )
+    assert [r["candidate_index"] for r in ranked] == [
+        3,
+        2,
+        1,
+        4,
+    ]  # diagnostics never beat a higher score

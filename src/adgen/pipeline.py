@@ -8,7 +8,7 @@ from .assets import normalize_image, read_references
 from .config import config_hash
 from .context import resolve_context
 from .contracts import AdRequest, CopySelection, CreativePlan, GuardrailReview, ProductProfile
-from .eval.compose import RANKING_RULE, rank
+from .eval.compose import RANKING_RULE, RANKING_VERSION, rank
 from .eval.evaluator import Evaluator
 from .eval.vision import VisionGateway
 from .planning import compile_prompt, keyword_review, planner_prompt, review_prompt, validate_plan
@@ -231,7 +231,10 @@ class Pipeline:
             "candidate_manifest",
         )
         summary, _ = self.stage(
-            self._eval_stage("export_evaluated") if self.evaluator else "export",
+            # The ranking rule is versioned in the stage name: re-ranking reuses stored evaluations.
+            self._eval_stage("export_evaluated") + "#" + RANKING_VERSION
+            if self.evaluator
+            else "export",
             {
                 "candidates": summary_input,
                 "request": request_sha,
@@ -423,9 +426,25 @@ class Pipeline:
     def _select(self, candidates):
         latest = {}
         for row in self.state.rows(
-            "SELECT * FROM evaluation WHERE run_id=? ORDER BY created_at", (self.run_id,)
+            "SELECT * FROM evaluation WHERE run_id=? AND evaluator_version=? ORDER BY created_at",
+            (self.run_id, self.evaluator.config.version),
         ):
-            latest[row["candidate_index"]] = row
+            record = self.state.json(row["record_artifact"])
+            latest[row["candidate_index"]] = {
+                **row,
+                "region": next(
+                    (c["verdict"] for c in record["context"]["checks"] if c["id"] == "C-REGION"),
+                    None,
+                ),
+                "similarity": next(
+                    (
+                        c["evidence"]["similarity"]["best"]
+                        for c in record["product"]["checks"]
+                        if c["id"] == "P-SIM" and c["evidence"].get("similarity")
+                    ),
+                    None,
+                ),
+            }
         ranked = rank(
             [
                 {
@@ -448,6 +467,8 @@ class Pipeline:
                 if r["evaluation"]
                 else None,
                 "overall_score": r["evaluation"]["overall_score"] if r["evaluation"] else None,
+                "country_recognisable": r["evaluation"]["region"] if r["evaluation"] else None,
+                "product_similarity": r["evaluation"]["similarity"] if r["evaluation"] else None,
             }
             for r in ranked
         ]

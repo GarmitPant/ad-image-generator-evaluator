@@ -3,8 +3,10 @@
 POINTS = {"pass": 1.0, "unknown": 0.5, "fail": 0.0}
 TIERS = {"pass": 0, "unknown": 1, "fail": 2, None: 3}
 GUARDRAIL_ORDER = {"approved": 0, "approved_after_replan": 1, "rejected_after_replan": 2, None: 3}
+RANKING_VERSION = "ranking/2"
 RANKING_RULE = (
-    "ranking/1: verdict tier > failed required checks > overall score > guardrail > index"
+    "ranking/2: verdict tier > failed required checks > overall score > country recognisable "
+    "(C-REGION) > product similarity (DINOv2) > plan guardrail > candidate index"
 )
 
 
@@ -49,13 +51,18 @@ def rank(records):
                 TIERS[None],
                 99,
                 0,
+                1,
+                0,
                 GUARDRAIL_ORDER.get(item.get("guardrail_status"), 3),
                 item["candidate_index"],
             )
+        # Diagnostics only break ties between candidates with the same verdict, failures and score.
         return (
             TIERS[ev["overall_verdict"]],
             ev["failed_required_checks"],
             -ev["overall_score"],
+            0 if ev.get("region") == "pass" else 1,
+            -(ev.get("similarity") or 0.0),
             GUARDRAIL_ORDER.get(item.get("guardrail_status"), 3),
             item["candidate_index"],
         )

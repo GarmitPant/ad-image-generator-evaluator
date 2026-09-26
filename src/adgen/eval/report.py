@@ -501,13 +501,23 @@ def report(rows, requests):
         req = q["request"]
         winner = next((r for r in cands if r["winner"]), None)
         table = _table(
-            ["Rank", "Candidate", "Verdict", "Score", "Why"],
+            [
+                "Rank",
+                "Candidate",
+                "Verdict",
+                "Score",
+                "Country recognisable",
+                "Product similarity",
+                "Why",
+            ],
             [
                 [
                     ranking.get(r["candidate_index"], "-"),
                     r["candidate_index"],
                     MARK[r["overall_verdict"]],
                     r["overall_score"],
+                    MARK.get(r["region_recognisable"], "-"),
+                    r["dinov2_best_similarity"] if r["dinov2_best_similarity"] is not None else "-",
                     "; ".join(r["why_failed"])
                     or (
                         "unsure: " + "; ".join(r["unsure_about"])
@@ -556,7 +566,7 @@ Each candidate gets PASS, FAIL or UNSURE per dimension. A candidate **passes** o
 | {DIM_NAMES["product"]} | Exactly one product; same type, shape, colours, distinctive parts, branding | AI judge compares references with the ad; object detector used to crop and count; position and angle are not judged |
 | {DIM_NAMES["context"]} | Season fits; nothing out of season; plausible for the country; no flags, caricature, religious imagery or irresponsible alcohol depiction | Same judge call; criteria come from the country/season inputs and the fixed policy, never from the generator's own plan |
 
-Scores (0–1) only break ties between candidates: a higher score never beats a failed check. Ranking: verdict → fewer failed checks → score → plan guardrail outcome → candidate number.
+Scores (0–1) only break ties between candidates: a higher score never beats a failed check. Ranking: verdict → fewer failed checks → score → country recognisable → product similarity to the reference → plan guardrail outcome → candidate number. The two diagnostics only break ties; they never override a verdict.
 
 ## 3. Results
 
@@ -577,5 +587,7 @@ Most common failure reasons:
 - The AI judge (OpenAI) is from a different model family than the image generator (Gemini), but the same family as the planner and reviewer.
 - OCR cannot read stylised logos, so branding relies mainly on the judge. The text-rendering score reflects spelling, not duplicates; duplicates still fail the verdict.
 - Thresholds (detector count, OCR confidence, legibility) are provisional and were not tuned on these results.
+- When candidates tie on verdict and score, the winner is decided by diagnostics (country recognisable, then product similarity). Similarity differences can be tiny (for example 0.892 vs 0.8917) and should not be read as meaningful quality differences.
+- Pilot requests 01 and 02 were used to fix the evaluator (evaluator/3), so they are development data rather than held-out results.
 - Costs are estimates from returned token usage and list prices; provider dashboards are authoritative.
 """

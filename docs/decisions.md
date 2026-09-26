@@ -138,3 +138,4 @@ Detailed differences and operational limits: [generation runbook](generation-run
 | Fix line merging, block wrap, label exclusion, detector prompt and count threshold (0.4 plus IoU de-duplication) | Three genuine false rejects in the pilot |
 | Version the evaluation stages and re-score existing runs with `adgen evaluate`, instead of regenerating | Generation was correct; only scoring changed. Saves image cost |
 | Treat pilot requests 01 and 02 as evaluator development data | The evaluator was changed after seeing their results |
+| Ranking/2: after verdict, failed checks and score, break ties by country recognisable (C-REGION), then DINOv2 product similarity, then guardrail status, then index | Confirmed by Garmit. Pilot showed all candidates tying at PASS/1.0, so winners were decided by index. Diagnostics only break ties. The ranking version is part of the export stage name, so re-ranking reuses stored evaluations (verified: 0 model calls) |
