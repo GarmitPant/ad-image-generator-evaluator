@@ -57,5 +57,5 @@ Survey of 2026-09-26, made while batch v1 was running. **Nothing listed here has
 ## E. Doc drift to fix during the final write-up (not deletions)
 
 - `README.md` still links `docs/generation-implementation-plan.md` and `examples/`. Its "What is implemented" section should mention evaluation, ranking and the report consistently.
-- `docs/design/05` names PP-OCRv5 in places other than the evaluator-model table.
+- `docs/design/02` (model table and source notes) still names PP-OCRv5; the pinned models are PP-OCRv6 medium.
 - `docs/design/02` model table: the judge is `gpt-6-sol`, local models are pinned; check that it matches `config/evaluator.toml`.
