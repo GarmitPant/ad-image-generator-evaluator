@@ -21,8 +21,6 @@ class PipelineConfig(Contract):
     max_output_tokens: int = Field(gt=0)
     image_max_output_tokens: int = Field(gt=0)
     max_llm_input_chars: int = Field(gt=0)
-    llm_reservation_usd: float = Field(gt=0)
-    image_reservation_usd: float = Field(gt=0)
     openai_input_per_million: float = Field(ge=0)
     openai_output_per_million: float = Field(ge=0)
     google_input_per_million: float = Field(ge=0)

@@ -255,7 +255,7 @@ The pipeline writes `outputs/<request_id>/<run_id>/` containing:
 | S8 image | Google `gemini-3.1-flash-image` | 1 per candidate → 3 |
 | S10 evaluation | per document 05 (OpenAI judge + local models) | bounded per candidate |
 
-Model IDs, efforts, timeouts, price tables and N live in `config/pipeline.toml`. Proposed timeouts are 120 s per image and 60 s per text call. Every call is recorded before dispatch. A dispatched call with no outcome becomes `unknown` and is never re-sent automatically. The run-level budget cap is checked before every dispatch.
+Model IDs, efforts, timeouts, price tables and N live in `config/pipeline.toml`. Proposed timeouts are 120 s per image and 60 s per text call. Every call is recorded before dispatch. A dispatched call with no outcome becomes `unknown` and is never re-sent automatically. There is no local spend cap: limits are set on the provider accounts, and the ledger records usage and report-only cost estimates.
 
 All LLM calls use one provider interface with an OpenAI implementation and a record/replay implementation for offline tests. No other LLM backend is implemented.
 

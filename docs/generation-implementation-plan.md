@@ -27,7 +27,7 @@ Corrections required at implementation:
 
 ## Authorization and evidence
 
-Garmit explicitly requested offline implementation only. No paid/provider inference calls are permitted in this turn. Dependencies may be installed; SDK boundaries are tested with injected transports. Synthetic fixtures prove mechanics, not model quality. G9 live compatibility remains unverified, with future explicit live mode and budget required.
+Garmit explicitly requested offline implementation only. No paid/provider inference calls are permitted in this turn. Dependencies may be installed; SDK boundaries are tested with injected transports. Synthetic fixtures prove mechanics, not model quality. G9 live compatibility remains unverified, with future explicit live mode required. (Superseded 2026-09-26: the local budget cap was removed; provider-account limits control spend. See runbook §5.)
 
 ## Completion checkpoint
 

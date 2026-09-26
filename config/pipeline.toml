@@ -11,9 +11,8 @@ max_output_tokens = 4096
 image_max_output_tokens = 4096
 max_llm_input_chars = 40000
 
-# Conservative dispatch estimates, not a provider-enforced billing ceiling.
-llm_reservation_usd = 0.12
-image_reservation_usd = 0.30
+# List prices for report-only cost estimates from returned token usage. Never enforced:
+# spend limits are set on the OpenAI and Google accounts.
 openai_input_per_million = 2.0
 openai_output_per_million = 10.0
 google_input_per_million = 0.50

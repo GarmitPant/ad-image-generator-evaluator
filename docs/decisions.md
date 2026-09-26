@@ -77,3 +77,12 @@ Proposed consequences: one-image baseline; defer repairs/aesthetic planning; use
 | Static prices/reservations are provisional estimates | No provider-enforced cap or free-token assumption; usage and uncertainty remain explicit |
 
 Detailed differences and operational limits: [generation runbook](generation-runbook.md).
+
+
+## 2026-09-26 — Local budget cap removed (Garmit, via Claude Code session)
+
+| Decision | Status and reason | Supersedes / alternative considered |
+|---|---|---|
+| Remove the local per-run budget cap (`--budget-usd`, pre-dispatch reservations, `budget_cap_usd`/`reservation_usd` columns) | Confirmed by Garmit: users set usage limits on the provider API accounts; the local cap was an estimate, not an enforceable limit | Keep local cap (rejected) |
+| Keep `--allow-paid`, dispatch-recorded-before-send, never resending unknown-outcome calls, and per-call usage with report-only cost estimates | Agent recommendation accepted; prevents accidental live runs and duplicate charges, and supplies cost-per-ad for the report | Remove all cost recording (not chosen) |
+| Implement as additive migration 002 (drop columns) rather than editing migration 001 | Implementation choice; existing local databases upgrade in place | Rewrite 001 (would break existing DBs) |

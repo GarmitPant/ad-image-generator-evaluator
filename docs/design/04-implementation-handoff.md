@@ -23,7 +23,7 @@ Progress checkpoints are kept in [docs/implementation-status.md](../implementati
 | Ticket | Deliverable | Exit evidence (offline unless marked live) |
 |---|---|---|
 | G0 | Scaffold: `pyproject.toml` (uv), package layout, `config/pipeline.toml`, `.env.example`, README setup | `pytest` runs green on an empty suite from a clean clone with no keys |
-| G1 | State store: schema incl. candidate/evaluation/selection, migrations, repository API, `adgen state init/show`, lock, events | Transition, resume/fingerprint, dispatched→unknown, budget-block, per-candidate independence and no-secret tests |
+| G1 | State store: schema incl. candidate/evaluation/selection, migrations, repository API, `adgen state init/show`, lock, events | Transition, resume/fingerprint, dispatched→unknown, per-candidate independence and no-secret tests |
 | G2 | Contracts: AdRequest (1–3 references, candidates 1–4), enums, country + band×season tables, text contracts, ProductProfile, ResolvedContext, CreativePlan, GuardrailReview | Schema tests, hemisphere/month tests, enum-table completeness |
 | G3 | S1 intake (multi-reference) + S4 context resolution | Decode/limits/rendition/hash/duplicate-reference tests on `data/products/`; resolver tests for all 8×4 pairs |
 | G4 | LLM provider interface: OpenAI client (structured output, no hidden retries), record/replay, cost estimation | Replay tests; missing recording fails without network |
@@ -124,7 +124,7 @@ One process and one SQLite file. No orchestration framework or agent runtime. Th
 - Refusals/no-image/corrupt/oversized responses are classified; generated-unscored is never accepted.
 - Crash/resume reuses completed artifacts without repeating paid generation; uncertain remote outcomes stay explicit.
 - Cache invalidation covers source, protected spans, plan, image/reference, rubric, thresholds and model configuration.
-- Missing replay fixtures fail offline. Actual model calls are opt-in and separately budgeted.
+- Missing replay fixtures fail offline. Actual model calls are opt-in (`--allow-paid`); spend limits live on the provider accounts.
 - Repeated-judge stability uses independent calls, not multiple reads of the same cache entry.
 
 ## 5. Data and report requirements

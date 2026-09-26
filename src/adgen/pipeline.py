@@ -1,5 +1,4 @@
 import json
-import math
 from pathlib import Path
 
 from pydantic import ValidationError
@@ -50,11 +49,7 @@ class Pipeline:
         )
         self.key = fingerprint({"effective_config": config_hash(config, policy), "mode": mode})
 
-    def run(self, request: AdRequest, base: Path, *, budget=0.0, run_id=None):
-        if not math.isfinite(budget) or budget < 0:
-            raise Blocked("budget_must_be_finite_and_nonnegative")
-        if self.mode == "live" and budget <= 0:
-            raise Blocked("live_requires_positive_explicit_budget")
+    def run(self, request: AdRequest, base: Path, *, run_id=None):
         refs = read_references(request.product_images, base)
         contract = source_contract(request.text)
         # Cheap fail-fast validation before creating calls or entering any paid stage.
@@ -66,9 +61,7 @@ class Pipeline:
                 "references": [r["original_sha256"] for r in refs],
             }
         )
-        run_id = self.state.create_run(
-            request, identity, self.config, self.key, self.mode, budget, run_id
-        )
+        run_id = self.state.create_run(request, identity, self.config, self.key, self.mode, run_id)
         self.run_id = run_id
         self.gateway = Gateway(self.state, run_id, self.config, self.backend, self.mode)
         with self.state.lock(run_id):
@@ -390,8 +383,7 @@ def export_run(state, run_id, destination=None, *, summary=None):
             atomic_write(directory / name, state.read(candidate["image_artifact"]))
             candidate["image_file"] = name
     manifest["ledger"] = {
-        key: state.inspect(run_id)["run"][key]
-        for key in ("cost_est_usd", "cost_unknown", "budget_cap_usd")
+        key: state.inspect(run_id)["run"][key] for key in ("cost_est_usd", "cost_unknown")
     }
     atomic_write(directory / "summary.json", canonical(manifest))
     atomic_write(directory / "text-plan.json", state.read(manifest["text_plan_artifact"]))

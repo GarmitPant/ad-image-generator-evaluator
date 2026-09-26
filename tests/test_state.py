@@ -1,18 +1,21 @@
 import json
 import sqlite3
+from pathlib import Path
 
 import pytest
 
 from adgen.contracts import AdRequest
 from adgen.demo import SyntheticProvider
 from adgen.pipeline import Pipeline
-from adgen.state import Blocked, State
+from adgen.state import SCHEMA_VERSION, Blocked, State
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_foreign_keys_wal_and_future_schema_refusal(state, tmp_path):
     assert state.db.execute("PRAGMA foreign_keys").fetchone()[0] == 1
     assert state.db.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
-    state.write("UPDATE schema_version SET version=99")
+    state.write("INSERT INTO schema_version VALUES(99, 'future')")
     with pytest.raises(Blocked, match="schema"):
         State(state.path)
 
@@ -36,7 +39,7 @@ def test_shared_stage_uniqueness_and_lock(run_pipeline, state):
     assert state.one("SELECT lock_owner FROM run WHERE run_id=?", (run_id,))["lock_owner"] is None
 
 
-def test_dispatch_committed_before_backend_and_budget_bound(run_pipeline, state, request_data):
+def test_dispatch_committed_before_backend_and_no_local_spend_cap(run_pipeline, state):
     class InspectingBackend(SyntheticProvider):
         def invoke(self, invocation, references):
             connection = sqlite3.connect(state.path)
@@ -47,16 +50,40 @@ def test_dispatch_committed_before_backend_and_budget_bound(run_pipeline, state,
                     ).fetchone()[0]
                     == 1
                 )
-                assert connection.execute("SELECT cost_est_usd FROM run").fetchone()[0] == 0.12
             finally:
                 connection.close()
             return super().invoke(invocation, references)
 
-    summary, backend = run_pipeline(backend=InspectingBackend(), mode="live", budget=0.13)
-    assert len(backend.calls) == 1
-    assert summary["status"] == "no_usable_candidates"
-    assert all(c["error_code"] == "budget_reservation_exceeded" for c in summary["candidates"])
-    assert state.inspect(summary["run_id"])["run"]["cost_est_usd"] == 0.12
+    # Live mode runs to completion with no local cap; synthetic responses carry no usage,
+    # so every call is recorded with an unknown (not zero-claimed) cost.
+    summary, backend = run_pipeline(backend=InspectingBackend(), mode="live")
+    assert summary["status"] == "generated_unscored"
+    assert len(backend.calls) == 7
+    snapshot = state.inspect(summary["run_id"])
+    assert "budget_cap_usd" not in snapshot["run"]
+    assert snapshot["run"]["cost_unknown"] == 1
+    assert all(
+        c["status"] == "completed" and c["cost_unknown"] == 1 for c in snapshot["model_calls"]
+    )
+
+
+def test_version_one_database_is_migrated_in_place(tmp_path):
+    path = tmp_path / "old.db"
+    old = sqlite3.connect(path)
+    old.executescript(
+        (ROOT / "src/adgen/state/migrations/001_generation.sql").read_text()
+        + "INSERT INTO run(run_id,request_id,request_sha256,pipeline_version,config_sha256,mode,status,n_candidates,budget_cap_usd,created_at,updated_at) VALUES('r1','x','h','v','c','live','succeeded',1,2,'t','t');"
+    )
+    old.close()
+    state = State(path)
+    try:
+        assert state.one("SELECT MAX(version) AS v FROM schema_version")["v"] == SCHEMA_VERSION
+        run = state.one("SELECT * FROM run WHERE run_id='r1'")
+        assert run["status"] == "succeeded" and "budget_cap_usd" not in run
+        columns = {r["name"] for r in state.rows("PRAGMA table_info(model_call)")}
+        assert "reservation_usd" not in columns
+    finally:
+        state.close()
 
 
 def test_crash_after_dispatch_never_automatically_resends(
@@ -68,13 +95,13 @@ def test_crash_after_dispatch_never_automatically_resends(
 
     pipeline = Pipeline(state, config, policy, InterruptingBackend(), "live")
     with pytest.raises(KeyboardInterrupt):
-        pipeline.run(AdRequest.model_validate(request_data), tmp_path, budget=2)
+        pipeline.run(AdRequest.model_validate(request_data), tmp_path)
     run_id = pipeline.run_id
     assert state.one("SELECT status FROM model_call")["status"] == "dispatched"
     backend = SyntheticProvider()
     with pytest.raises(Blocked, match="not_resendable"):
         Pipeline(state, config, policy, backend, "live").run(
-            AdRequest.model_validate(request_data), tmp_path, budget=2, run_id=run_id
+            AdRequest.model_validate(request_data), tmp_path, run_id=run_id
         )
     assert backend.calls == []
     assert state.one("SELECT status,cost_unknown FROM model_call") == {
@@ -105,7 +132,7 @@ def test_sensitive_provider_exception_not_logged(run_pipeline, state):
             raise RuntimeError("SECRET_API_KEY_MUST_NEVER_APPEAR")
 
     with pytest.raises(Blocked, match="unknown"):
-        run_pipeline(backend=BadBackend(), mode="live", budget=2)
+        run_pipeline(backend=BadBackend(), mode="live")
     run_id = state.one("SELECT run_id FROM run")["run_id"]
     assert "SECRET_API_KEY" not in json.dumps(state.inspect(run_id))
 

@@ -169,6 +169,15 @@ def test_google_wire_payload_and_ignore_thought_image(config):
     client.close()
 
 
+def test_cost_estimate_is_report_only_and_unknown_without_usage(config):
+    text = {"kind": "text"}
+    usage = {"input_tokens": 1_000_000, "output_tokens": 100_000}
+    cost, unknown = estimate_cost(config, text, {"usage": usage})
+    assert cost == pytest.approx(3.0) and not unknown  # $2/M input + $10/M output
+    assert estimate_cost(config, text, {"usage": None}) == (0.0, True)
+    assert estimate_cost(config, {"kind": "image"}, {}) == (0.0, True)
+
+
 @pytest.mark.parametrize(
     "parts,reason,expected",
     [

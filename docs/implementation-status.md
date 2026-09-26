@@ -8,13 +8,14 @@ Checkpoint maintained by the implementing agent. Current human instruction: fini
 |---|---|
 | Design | v0.4, with generation-only implementation corrections documented in the review/runbook |
 | Implementation | Generation v0.1; G0–G8 implemented and verified offline |
-| Local verification | 88 tests passed; Ruff passed; editable install and CLI demo/replay/export exercised; Python 3.13.3/macOS |
+| Local verification | 89 tests passed; Ruff check + format passed; demo/replay/export exercised; Python 3.13.3/macOS. Pre-change commit 4049341 also reproduced green on a clean clone with Python 3.11 (CI steps) |
 | Reference smoke runs | Three-reference Heineken Exact: 3 synthetic candidates; single-reference bottle Extract: 2 synthetic candidates; all saved |
 | Provider evidence | Real SDK serialization/deserialization through mocked HTTP transports; no provider network inference |
 | Paid usage this checkpoint | $0; no live calls; credentials not required or supplied to tests |
 | Live readiness | Adapters wired; G9 account/model compatibility and real image output still unverified |
 | Deferred | UI; all image evaluation, scores, selection and batch evaluation |
-| Next step | Review this generation checkpoint; when expressly authorized, run a small recorded live compatibility probe with a concrete budget |
+| Spend control | Local budget cap removed (migration 002); limits are set on provider accounts; ledger keeps usage and report-only cost estimates |
+| Next step | G9: first live probe, 1 reference / 1 candidate / Extract, once Garmit adds keys and gives the go-ahead |
 
 Implementation and operating details: [generation runbook](generation-runbook.md). Design review and rationale: [implementation plan](generation-implementation-plan.md).
 
@@ -38,7 +39,7 @@ Implementation and operating details: [generation runbook](generation-runbook.md
 
 ## Evidence details
 
-`pytest -q`: **88 passed**. Coverage includes SDK request shape and no-retry behavior, response refusal/no-image/multiple-image handling, omission/protected-span failures, 42 MP image normalization, EXIF/ICC/alpha, both guardrail replan outcomes, invalid plan recovery, per-candidate failure isolation, changed-input/config refusal, artifact corruption, shared-stage uniqueness, mutual exclusion, budget reservation, dispatch-before-network, receipt reuse after interruption, unknown-call non-resend and secret-safe exception recording.
+`pytest -q`: **89 passed**. Coverage includes SDK request shape and no-retry behavior, response refusal/no-image/multiple-image handling, omission/protected-span failures, 42 MP image normalization, EXIF/ICC/alpha, both guardrail replan outcomes, invalid plan recovery, per-candidate failure isolation, changed-input/config refusal, artifact corruption, shared-stage uniqueness, mutual exclusion, report-only cost estimates, v1→v2 schema migration, dispatch-before-network, receipt reuse after interruption, unknown-call non-resend and secret-safe exception recording.
 
 The two repository-photo smoke runs used **SyntheticProvider**, not visual analysis or Gemini. Local run IDs were `c699c241ae1149d5afa2c418218bac1e` (Heineken) and `84182641d87f4f048212dea51c3d9781` (bottle), in the gitignored `runs/offline-reference-smoke/state.db`. These are local verification artifacts, not portable benchmark evidence. The normal demo generates its own portable synthetic fixtures on demand. CI has been configured, but remote CI completion is not claimed here.
 
@@ -47,3 +48,4 @@ The two repository-photo smoke runs used **SyntheticProvider**, not visual analy
 - 2026-09-26 — Design v0.3 committed; implementation not started.
 - 2026-09-26 — Design v0.4 committed; implementation not started.
 - 2026-09-26 — Garmit requested review and generation implementation, then explicitly selected offline-only work. G0–G8 implemented in this checkpoint with tests and runbook. No evaluator or UI added.
+- 2026-09-26 — Local budget cap removed at Garmit's direction (Claude Code): migration 002, no `--budget-usd`, no reservations; `--allow-paid`, dispatch-before-send, unknown-never-resent and usage-based report-only cost kept. 89 tests pass.

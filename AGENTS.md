@@ -35,7 +35,7 @@ Current checkpoint: generation v0.1 is implemented and tested offline. See docs/
 - Compose verdicts in code. Keep evaluation reliability separate from pass/fail/unknown quality. Learned measurements are fallible; missing evidence never means pass.
 - Keep generation and standalone evaluation decoupled. Replay must never fall through to paid providers.
 - Genuine recorded responses and real labelled images test evaluator behaviour; synthetic fixtures test control flow only.
-- Paid inference requires an authorized concrete estimate and ledger. No API budget is approved yet. No hidden billable retries.
+- Paid inference requires Garmit's explicit go-ahead and `--allow-paid`. Spend limits are enforced on the provider accounts, not in code; the ledger records usage and report-only cost estimates. No hidden billable retries; never resend an unknown-outcome call.
 - No secrets in logs/commits; use gitignored environment configuration. Preserve provider provenance markings.
 - Report counts, abstentions, tuning splits, human intervention and failures. Do not invent model superiority, calibration or test results.
 

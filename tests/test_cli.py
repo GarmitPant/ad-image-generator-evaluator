@@ -13,8 +13,6 @@ def test_live_without_spend_flag_never_contacts_provider(tmp_path, capsys):
             "unused.json",
             "--mode",
             "live",
-            "--budget-usd",
-            "2",
         ]
     )
     assert code == 2

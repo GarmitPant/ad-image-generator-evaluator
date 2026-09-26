@@ -225,24 +225,23 @@ class LiveProvider:
 
 
 def estimate_cost(config, invocation, metadata):
+    """Report-only estimate from returned usage and configured list prices; never enforced.
+
+    Spend limits belong to the provider accounts. Missing usage yields (0, unknown=True).
+    """
     usage = metadata.get("usage")
-    reservation = (
-        config.image_reservation_usd
-        if invocation["kind"] == "image"
-        else config.llm_reservation_usd
-    )
     if not usage:
-        return reservation, True
+        return 0.0, True
     if invocation["kind"] == "text":
         if usage.get("input_tokens") is None or usage.get("output_tokens") is None:
-            return reservation, True
+            return 0.0, True
         return (
             usage["input_tokens"] * config.openai_input_per_million
             + usage["output_tokens"] * config.openai_output_per_million
         ) / 1_000_000, False
     details = usage.get("candidates_tokens_details")
     if not details or usage.get("prompt_token_count") is None:
-        return reservation, True
+        return 0.0, True
     total = usage["prompt_token_count"] * config.google_input_per_million
     for detail in details:
         rate = (
@@ -306,45 +305,27 @@ class Gateway:
             raise Blocked("recorded_call_not_resendable:" + existing["status"])
         request_sha = self.state.artifact(canonical(invocation), "provider_request")
         self.state.link(exec_id, request_sha, "output", "provider_request")
-        reservation = (
-            (self.config.image_reservation_usd if image else self.config.llm_reservation_usd)
-            if self.mode == "live"
-            else 0
-        )
         call_id = uuid.uuid4().hex
         db = self.state.db
-        # Persist request and reserve budget before ANY provider traffic.
-        with db:
-            db.execute("BEGIN IMMEDIATE")
-            run = self.state.one("SELECT * FROM run WHERE run_id=?", (self.run_id,))
-            if (
-                self.mode == "live"
-                and run["cost_est_usd"] + reservation > run["budget_cap_usd"] + 1e-9
-            ):
-                raise Blocked("budget_reservation_exceeded")
-            db.execute(
-                "UPDATE run SET cost_est_usd=cost_est_usd+? WHERE run_id=?",
-                (reservation, self.run_id),
-            )
-            db.execute(
-                "INSERT INTO model_call(call_id,exec_id,provider,model_requested,purpose,invocation_sha256,prompt_sha256,request_path,request_artifact,status,reservation_usd,cost_est_usd,started_at) VALUES(?,?,?,?,?,?,?,?,?,'dispatched',?,?,?)",
-                (
-                    call_id,
-                    exec_id,
-                    "replay" if self.mode == "replay" else ("google" if image else "openai"),
-                    invocation["model"],
-                    purpose,
-                    key,
-                    fingerprint(prompt),
-                    self.state.one("SELECT path FROM artifact WHERE artifact_id=?", (request_sha,))[
-                        "path"
-                    ],
-                    request_sha,
-                    reservation,
-                    reservation,
-                    now(),
-                ),
-            )
+        # Persist the dispatch before ANY provider traffic so a crash leaves an auditable,
+        # never-resent "unknown" call rather than a silent duplicate charge.
+        self.state.write(
+            "INSERT INTO model_call(call_id,exec_id,provider,model_requested,purpose,invocation_sha256,prompt_sha256,request_path,request_artifact,status,cost_est_usd,started_at) VALUES(?,?,?,?,?,?,?,?,?,'dispatched',0,?)",
+            (
+                call_id,
+                exec_id,
+                "replay" if self.mode == "replay" else ("google" if image else "openai"),
+                invocation["model"],
+                purpose,
+                key,
+                fingerprint(prompt),
+                self.state.one("SELECT path FROM artifact WHERE artifact_id=?", (request_sha,))[
+                    "path"
+                ],
+                request_sha,
+                now(),
+            ),
+        )
         try:
             reference_bytes = [self.state.read(sha) for sha in refs]
             response = self.backend.invoke(invocation, reference_bytes)
@@ -370,8 +351,6 @@ class Gateway:
                 if self.mode == "live"
                 else (0, False)
             )
-            # Keep the larger of reservation and estimate: this is a conservative local dispatch ledger.
-            charged = max(cost, reservation)
             with db:
                 db.execute(
                     "UPDATE model_call SET status='completed',response_artifact=?,response_path=?,model_returned=?,cost_est_usd=?,cost_unknown=?,usage_json=?,ended_at=? WHERE call_id=?",
@@ -381,7 +360,7 @@ class Gateway:
                             "SELECT path FROM artifact WHERE artifact_id=?", (response_sha,)
                         )["path"],
                         response.metadata.get("model_returned"),
-                        charged,
+                        cost,
                         int(unknown),
                         canonical(response.metadata.get("usage")).decode(),
                         now(),
@@ -390,7 +369,7 @@ class Gateway:
                 )
                 db.execute(
                     "UPDATE run SET cost_est_usd=cost_est_usd+?,cost_unknown=MAX(cost_unknown,?) WHERE run_id=?",
-                    (charged - reservation, int(unknown), self.run_id),
+                    (cost, int(unknown), self.run_id),
                 )
         except Exception as exc:
             # Unknown billing outcome is retained; never stringify SDK exceptions.

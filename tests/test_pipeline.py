@@ -232,11 +232,6 @@ def test_no_live_backend_allowed_in_replay(state, config, policy):
         Pipeline(state, config, policy, LiveProvider(config), "replay")
 
 
-def test_nonfinite_budget_rejected(run_pipeline):
-    with pytest.raises(Blocked, match="finite"):
-        run_pipeline(budget=float("nan"))
-
-
 def test_invalid_plan_can_recover_on_second_attempt(run_pipeline, request_data):
     request_data["n_candidates"] = 1
 

@@ -47,7 +47,6 @@ CREATE TABLE run (
   current_stage     TEXT,
   terminal_reason   TEXT,                         -- e.g. invalid_text_plan, provider_failed, generated_unscored
   n_candidates      INTEGER NOT NULL CHECK (n_candidates BETWEEN 1 AND 4),
-  budget_cap_usd    REAL NOT NULL,
   cost_est_usd      REAL NOT NULL DEFAULT 0,
   cost_unknown      INTEGER NOT NULL DEFAULT 0,   -- 1 if any call outcome is unknown
   lock_owner        TEXT,
@@ -174,7 +173,7 @@ CREATE TABLE event (                              -- append-only
   ts           TEXT NOT NULL,
   type         TEXT NOT NULL,                     -- run_started, stage_started, stage_succeeded,
                                                   -- stage_failed, call_dispatched, call_completed,
-                                                  -- guardrail_rejected, replan_started, budget_blocked, ...
+                                                  -- guardrail_rejected, replan_started, ...
   payload      TEXT NOT NULL                      -- JSON; schema per type; no secrets
 );
 
@@ -192,7 +191,7 @@ Artifact payload schemas (ProductProfile, TextPlan, CreativePlan, and so on) are
 1. **Transitions** are written in one transaction with their event: `pending → running → succeeded | failed | blocked`. A stage starts only if every upstream stage it depends on has `succeeded`, or was legitimately `skipped` (for example, extract selection in Exact mode), and the recorded input hashes match the current artifacts.
 2. **Resume and cache:** before running, look up a `succeeded` execution with the same `input_fingerprint`. If one exists, create an execution with `reused_from` set and no model call. Product analysis uses this across runs, giving one call per unique reference.
 3. **Paid-call safety:** insert `model_call(status='dispatched')` and commit before sending. After a crash, any `dispatched` call with no completion becomes `unknown`, and the run gets `cost_unknown = 1`. The call is not re-sent automatically; a human decides.
-4. **Budget:** before each dispatch, check `cost_est_usd` plus the estimated cost of the next call against `budget_cap_usd`. If it would exceed the cap, the run is `blocked` with `budget_blocked`. Estimates come from configured price tables and are labelled as estimates.
+4. **Cost (report-only):** after each call, `cost_est_usd` is computed from returned token usage and configured list prices, and summed per run. Missing usage sets `cost_unknown`. Nothing is blocked on cost. Spend limits are set on the provider accounts (decision 2026-09-26; implemented as migration 002).
 5. **Guardrail outcome:** `candidate.guardrail_status` is set by the plan_guardrails stage for that candidate and is always carried into its EvalRecord.
 5a. **Candidates are independent.** One candidate's failure marks that candidate `failed`/`blocked` and the others continue. Selection runs if at least one candidate is `evaluated`. Otherwise the run ends `failed` with no winner.
 5b. **Evaluation is re-runnable.** A new evaluator or rubric version creates new `evaluation` rows. Old rows are kept, never overwritten. Batched evaluation later writes the same table with `candidate_index` set or NULL.

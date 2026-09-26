@@ -1,6 +1,5 @@
 import argparse
 import json
-import math
 import os
 from pathlib import Path
 
@@ -12,7 +11,7 @@ from .contracts import AdRequest
 from .demo import SyntheticProvider, prepare_demo
 from .pipeline import Pipeline, export_run
 from .providers import LiveProvider, ReplayProvider, export_fixtures
-from .state import Blocked, StageFailed, State
+from .state import SCHEMA_VERSION, Blocked, StageFailed, State
 
 
 def parser():
@@ -27,15 +26,14 @@ def parser():
     generation.add_argument("--request", required=True, type=Path)
     generation.add_argument("--mode", choices=["replay", "live"], default="replay")
     generation.add_argument("--fixtures", type=Path)
-    generation.add_argument("--budget-usd", type=float, default=0)
     generation.add_argument(
         "--run-id",
-        help="Resume this immutable run; same request, references, config, mode and budget required",
+        help="Resume this immutable run; same request, references, config and mode required",
     )
     generation.add_argument(
         "--allow-paid",
         action="store_true",
-        help="Explicit authorization for live inference up to the local estimated dispatch budget",
+        help="Explicit authorization for paid live inference; spend limits are set on the provider accounts",
     )
     demo = commands.add_parser(
         "demo", help="Offline synthetic fixtures, visibly labeled; never calls providers"
@@ -66,7 +64,7 @@ def main(argv=None):
         if args.command == "state":
             print(
                 json.dumps(
-                    {"database": str(state.path), "schema_version": 1}
+                    {"database": str(state.path), "schema_version": SCHEMA_VERSION}
                     if args.state_command == "init"
                     else state.inspect(args.run_id),
                     indent=2,
@@ -92,15 +90,13 @@ def main(argv=None):
         if args.command == "demo":
             request_path = prepare_demo(args.directory)
             backend = SyntheticProvider(args.directory / "fixtures")
-            mode, budget, run_id = "replay", 0, None
+            mode, run_id = "replay", None
         else:
             request_path = args.request
-            mode, budget, run_id = args.mode, args.budget_usd, args.run_id
-            if not math.isfinite(budget) or budget < 0:
-                raise Blocked("budget_must_be_finite_and_nonnegative")
+            mode, run_id = args.mode, args.run_id
             if mode == "live":
-                if not args.allow_paid or budget <= 0:
-                    raise Blocked("live_requires_allow_paid_and_positive_budget")
+                if not args.allow_paid:
+                    raise Blocked("live_requires_allow_paid")
                 load_dotenv(Path.cwd() / ".env", override=False)
                 if not os.environ.get("OPENAI_API_KEY") or not os.environ.get("GEMINI_API_KEY"):
                     raise Blocked("missing_provider_credentials")
@@ -111,7 +107,7 @@ def main(argv=None):
                 backend = ReplayProvider(args.fixtures)
         request = AdRequest.model_validate_json(request_path.read_text())
         pipeline = Pipeline(state, config, policy, backend, mode)
-        summary = pipeline.run(request, request_path.resolve().parent, budget=budget, run_id=run_id)
+        summary = pipeline.run(request, request_path.resolve().parent, run_id=run_id)
         print(
             json.dumps(
                 {

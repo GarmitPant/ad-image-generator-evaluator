@@ -77,7 +77,7 @@ Change input, model, system/user prompt, schema, references, sampling identity o
 
 Default database: `runs/state.db`. Use shell environment `ADGEN_STATE_DB` or global option `adgen --db path/to/state.db ...` to override. Global options (`--db`, `--config`, `--policy`) precede the command.
 
-Tables: `schema_version`, `run`, `stage_execution`, `artifact`, `stage_artifact`, `model_call`, `candidate`, `event`. Version 1 is the only current migration; unknown versions refuse to run. WAL and foreign keys are enabled. Shared stages use candidate index **0**, avoiding SQLite's nullable-UNIQUE loophole. Run IDs are UUID4 hex strings, not the design's proposed ULIDs.
+Tables: `schema_version`, `run`, `stage_execution`, `artifact`, `stage_artifact`, `model_call`, `candidate`, `event`. Migrations: 001 (generation schema) and 002 (removes the local budget cap columns). Older databases upgrade in place on open; newer, unknown versions refuse to run. WAL and foreign keys are enabled. Shared stages use candidate index **0**, avoiding SQLite's nullable-UNIQUE loophole. Run IDs are UUID4 hex strings, not the design's proposed ULIDs.
 
 Content-addressed artifacts live at `runs/artifacts/<prefix>/<sha256>` without extensions. Original bytes, normalized references, requests, source contracts, plans, prompts, policy/config snapshots, provider receipts and output images are stored and linked. Files are written using same-directory temp files, flush/fsync and atomic replacement before their database references are completed. Do not edit them manually.
 
@@ -90,7 +90,7 @@ adgen export RUN_ID --destination runs/my-export
 adgen export-fixtures RUN_ID --destination runs/recordings/RUN_ID
 ```
 
-Resume requires unchanged request, original-reference bytes, effective config/policy, mode and budget. Completed stage artifacts are rehashed. Completed provider receipts can be reused after a crash before stage validation. A committed dispatch without a committed receipt becomes **unknown** and is never automatically resent. This conservatively treats even a crash immediately before network dispatch as uncertain.
+Resume requires unchanged request, original-reference bytes, effective config/policy and mode. Completed stage artifacts are rehashed. Completed provider receipts can be reused after a crash before stage validation. A committed dispatch without a committed receipt becomes **unknown** and is never automatically resent. This conservatively treats even a crash immediately before network dispatch as uncertain.
 
 Failed or blocked terminal stages are not automatically retried. An interrupted code-only stage can resume; a completed call can be reparsed from its receipt. To change input/config, retry a terminal provider failure or resolve a missing replay fixture, start a new run. Starting a new **live** run can spend again; inspect the prior call ledger first. There is no provider reconciliation API or override to blindly resend unknown calls in this version.
 
@@ -110,29 +110,33 @@ runs/exports/RUN_ID/
 
 Only successfully gated images are exported. Partial success is represented by per-candidate statuses; no candidate is selected as best. `guardrail_status:approved` describes the **plan review**, not a judgment of the resulting image. A second rejected plan may still have a generated image, distinctly flagged.
 
-## 5. Future live operation — not authorized or performed in this checkpoint
+## 5. Live operation and spend control
 
-After explicit spend approval, create a local `.env` from `.env.example` and supply credentials. Do not put keys in requests or CLI arguments. `store=False` is sent to OpenAI. Exception payloads and SDK request headers are never persisted by the ledger.
-
-Example for a future approved 3-candidate run:
+Create a local `.env` from `.env.example` and supply credentials. Do not put keys in requests or CLI arguments. `store=False` is sent to OpenAI. Exception payloads and SDK request headers are never persisted by the ledger.
 
 ```sh
-adgen generate --request examples/heineken-exact.json \
-  --mode live --allow-paid --budget-usd 2.60
+adgen generate --request examples/heineken-exact.json --mode live --allow-paid
 ```
 
-This command would spend money. It was **not** run during implementation. The local budget reserves $0.12 per LLM dispatch and $0.30 per image dispatch using provisional, configurable estimates:
+`--allow-paid` is the explicit opt-in for paid calls. It prevents an accidental live run and is not a budget. **There is no local spend cap** (removed 2026-09-26 at Garmit's direction). Control spend on the provider accounts: prepaid credit without auto-recharge, and project usage limits on OpenAI and Google.
 
-| Three candidates | LLM calls | Image calls | Dispatch reservations |
-|---|---:|---:|---:|
-| Exact, no replans | 7 | 3 | $1.74 |
-| Extract, no replans | 8 | 3 | $1.86 |
-| Exact, every candidate replans/reviews twice | 13 | 3 | $2.46 |
-| Extract, every candidate replans/reviews twice | 14 | 3 | $2.58 |
+Per three-candidate request, calls are:
 
-Product cache hits reduce calls. Failed provider attempts still consume reservations. Usage and returned model IDs are recorded when available; the ledger retains the greater of the reservation and usage-based estimate. Missing usage or uncertain outcomes set `cost_unknown`. Rates in config are provisional, not a current billing quote. There is no free-token assumption.
+| Case | LLM calls | Image calls |
+|---|---:|---:|
+| Exact, no replans | 7 | 3 |
+| Extract, no replans | 8 | 3 |
+| Exact, every candidate replans/reviews twice | 13 | 3 |
+| Extract, every candidate replans/reviews twice | 14 | 3 |
 
-**The budget is a local pre-dispatch estimate, not an exact provider-enforced cap.** A call can exceed its reservation; its observed estimate increases the ledger and can block subsequent calls. Verify rates/account limits before authorization. No real cost is incurred by replay/synthetic calls.
+Product cache hits reduce calls.
+
+**Ledger:**
+- Every call is recorded as `dispatched` before any network traffic.
+- After the response, the returned usage and model ID are stored with a **report-only** cost estimate: token counts × list prices in `config/pipeline.toml`.
+- Missing usage, or an uncertain outcome, sets `cost_unknown` instead of claiming zero.
+- Estimates are for reporting cost per ad; the provider dashboards are the billing source of truth.
+- No real cost is incurred by replay or synthetic calls.
 
 Both SDK transport retries are disabled. Planner replan is a distinct, explicit attempt (at most two); image calls have no automatic retry. Provider errors, refusal, no final image or multiple final images become recorded candidate failures. A malformed first plan may be replanned without a reviewer; two invalid plans stop that candidate.
 
@@ -140,6 +144,6 @@ CLI exit codes: 0 all requested candidates generated; 3 partial success; 2 valid
 
 ## 6. Verification and next handoff
 
-The offline suite covers all 32 geography/season combinations, exact Unicode spans/protection/capacity, image normalization/large references, text isolation, both replan outcomes, independent failures, SDK request/response transports, retries, budget/locks/receipts, immutable resume, corruption and replay/export. It denies sockets globally. Synthetic fixture success does not test visual quality, prompt adherence or semantic extraction.
+The offline suite covers all 32 geography/season combinations, exact Unicode spans/protection/capacity, image normalization/large references, text isolation, both replan outcomes, independent failures, SDK request/response transports, retries, locks/receipts, report-only cost estimates, schema migration, immutable resume, corruption and replay/export. It denies sockets globally. Synthetic fixture success does not test visual quality, prompt adherence or semantic extraction.
 
-Next step when authorized: a small recorded live compatibility probe (one candidate first, then multi-reference and Extract) with an explicit budget. Confirm models, structured schema support, image modality/config and usage fields. Only after generation is proven should the next agent implement evaluation against independently defined criteria, then ranking and batch evaluation. Existing saved artifacts and text contracts provide its inputs; no evaluator criterion should be inferred from the planner's rationale.
+Next step: a small recorded live compatibility probe (one candidate first, then multi-reference and Extract), with spend limits set on the provider accounts. Confirm models, structured schema support, image modality/config and usage fields. Only after generation is proven should the next agent implement evaluation against independently defined criteria, then ranking and batch evaluation. Existing saved artifacts and text contracts provide its inputs; no evaluator criterion should be inferred from the planner's rationale.

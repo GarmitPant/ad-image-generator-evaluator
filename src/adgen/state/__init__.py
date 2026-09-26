@@ -10,6 +10,9 @@ from pathlib import Path
 
 from ..util import atomic_write, canonical, digest, fingerprint, now
 
+MIGRATIONS = ["001_generation.sql", "002_remove_budget_cap.sql"]
+SCHEMA_VERSION = len(MIGRATIONS)
+
 
 class Blocked(RuntimeError):
     pass
@@ -31,13 +34,16 @@ class State:
         exists = self.db.execute(
             "SELECT 1 FROM sqlite_master WHERE name='schema_version'"
         ).fetchone()
-        if exists:
-            version = self.db.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
-            if version != 1:
-                self.db.close()
-                raise Blocked("unsupported_database_schema")
-        else:
-            sql = (Path(__file__).parent / "migrations/001_generation.sql").read_text()
+        version = (
+            self.db.execute("SELECT MAX(version) FROM schema_version").fetchone()[0]
+            if exists
+            else 0
+        )
+        if not 0 <= version <= SCHEMA_VERSION:
+            self.db.close()
+            raise Blocked("unsupported_database_schema")
+        for name in MIGRATIONS[version:]:
+            sql = (Path(__file__).parent / "migrations" / name).read_text()
             # DDL is transactional, including the schema version marker.
             self.db.executescript("BEGIN IMMEDIATE;\n" + sql + "\nCOMMIT;")
 
@@ -98,22 +104,21 @@ class State:
             (run_id, exec_id, kind, canonical(payload).decode(), now()),
         )
 
-    def create_run(self, request, request_hash, config, config_hash, mode, budget, run_id=None):
+    def create_run(self, request, request_hash, config, config_hash, mode, run_id=None):
         if run_id:
             record = self.one("SELECT * FROM run WHERE run_id=?", (run_id,))
             if not record:
                 raise Blocked("run_not_found")
-            if (
-                record["request_sha256"],
-                record["config_sha256"],
-                record["mode"],
-                record["budget_cap_usd"],
-            ) != (request_hash, config_hash, mode, budget):
-                raise Blocked("resume_inputs_config_mode_or_budget_changed")
+            if (record["request_sha256"], record["config_sha256"], record["mode"]) != (
+                request_hash,
+                config_hash,
+                mode,
+            ):
+                raise Blocked("resume_inputs_config_or_mode_changed")
             return run_id
         run_id = uuid.uuid4().hex
         self.write(
-            "INSERT INTO run(run_id,request_id,request_sha256,pipeline_version,config_sha256,mode,status,n_candidates,budget_cap_usd,created_at,updated_at) VALUES(?,?,?,?,?,?,'pending',?,?,?,?)",
+            "INSERT INTO run(run_id,request_id,request_sha256,pipeline_version,config_sha256,mode,status,n_candidates,created_at,updated_at) VALUES(?,?,?,?,?,?,'pending',?,?,?)",
             (
                 run_id,
                 request.request_id,
@@ -122,7 +127,6 @@ class State:
                 config_hash,
                 mode,
                 request.n_candidates,
-                budget,
                 now(),
                 now(),
             ),
